@@ -2,6 +2,7 @@
 __pycache__/
 results/*_log.txt
 results/cand/
+results/cand2/
 results/design_lak9_sf6.json
 results/refine/
 results/run_log.txt
