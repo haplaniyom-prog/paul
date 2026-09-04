@@ -30,24 +30,7 @@ ALPHA_CAMERA = 23.6e-6   # camera body assumed aluminium
 
 
 def thermal_lens(lens, T, alpha_housing, alpha_camera=ALPHA_CAMERA, T0=G.T_REF):
-    L = lens.copy(); dT = T - T0
-    n = len(L.surfaces)
-    for k, s in enumerate(L.surfaces):
-        if s.glass != "AIR":
-            a = G.THERMAL[s.glass]["alpha"]
-            s.c = s.c / (1 + a * dT)          # radius grows
-            s.t = s.t * (1 + a * dT)
-            s.T = T
-        elif k == n - 1:
-            s.t = (s.t - FFD) * (1 + alpha_housing * dT) + FFD * (1 + alpha_camera * dT)
-        else:
-            s.t = s.t * (1 + alpha_housing * dT)
-    # glass radius: also the previous surface (glass->air) belongs to the element
-    for k, s in enumerate(L.surfaces):
-        if s.glass == "AIR" and k > 0 and L.surfaces[k - 1].glass != "AIR":
-            a = G.THERMAL[L.surfaces[k - 1].glass]["alpha"]
-            s.c = s.c / (1 + a * dT)
-    return L
+    return lens.at_temperature(T, alpha_housing, alpha_camera, FFD, T0)
 
 
 def _offset(L):

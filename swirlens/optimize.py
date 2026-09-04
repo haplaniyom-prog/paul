@@ -14,7 +14,7 @@ EFL_TARGET = 75.0
 FNO_TARGET = 1.8
 IMG_SEMI_DIAG = 8.2          # mm (16.4 mm diagonal of the 640x512 / 20 um FPA)
 FFD_CMOUNT = 17.526          # mm flange focal distance
-REAR_SD_MAX = 10.25          # mm clear semi-diameter inside the 1"-32 throat (20.5 mm clear, ~2 mm wall)
+REAR_SD_MAX = 10.0           # mm clear semi-diameter inside the 1"-32 throat (20 mm clear)
 BFL_MIN = FFD_CMOUNT + 1.0   # rear vertex at least 1 mm in front of the flange
 TRACK_MAX = 110.0            # mm first vertex -> image
 CHIEF_ANGLE_MAX = 16.0       # deg at the sensor (edge of field)
@@ -107,7 +107,11 @@ def bounds(lens, layout):
 
 # ---------------------------------------------------------------- merit
 class Merit:
-    def __init__(self, lens, layout, npup=11, field_w=(1.0, 1.0, 1.0, 0.8), lc_weight=0.0, ac_weight=0.0, target_rms=None, shape_weight=0.0, tf_offsets=(), tf_weight=0.7):
+    def __init__(self, lens, layout, npup=11, field_w=(1.0, 1.0, 1.0, 0.8), lc_weight=0.0, ac_weight=0.0, target_rms=None, shape_weight=0.0, tf_offsets=(), tf_weight=0.7,
+                 th_weight=0.0, efl_th_weight=0.0, thick_weight=0.0, alpha_housing=23.6e-6):
+        # thermal residuals (housing alpha): defocus (mm) and EFL change (mm) at -40 and +70 C
+        self.th_weight = th_weight; self.efl_th_weight = efl_th_weight; self.alpha_housing = alpha_housing
+        self.thick_weight = thick_weight   # penalty on glass centre thickness above 9 mm
         # tf_offsets (mm): also drive the blur to target_rms at these defocus
         # positions (focus-insensitive PSF); tf_weight scales those residuals
         self.tf_offsets = tuple(tf_offsets); self.tf_weight = tf_weight
@@ -238,6 +242,16 @@ class Merit:
             for lam, wl in zip(L.wavelengths, L.weights):
                 if lam != L.ref_wl:
                     cons.append(self.ac_weight * np.sqrt(wl) * (L.paraxial(lam)["bfl"] - b0))
+        if self.th_weight > 0 or self.efl_th_weight > 0:
+            off0 = par["bfl"] - L.surfaces[-1].t
+            for Tc in (-40.0, 70.0):
+                Lt = L.at_temperature(Tc, self.alpha_housing)
+                pt = Lt.paraxial()
+                cons.append(self.th_weight * ((pt["bfl"] - Lt.surfaces[-1].t) - off0))
+                cons.append(self.efl_th_weight * (pt["efl"] - par["efl"]))
+        if self.thick_weight > 0:
+            for (a, b) in self.pairs:
+                cons.append(self.thick_weight * max(0.0, L.surfaces[a].t - 9.0))
         cons.append(1.0 * max(0.0, z[-1] - TRACK_MAX))
         cons.append(0.05 * max(0.0, chief_angle - CHIEF_ANGLE_MAX))
         res.append(np.array(cons))
@@ -249,10 +263,10 @@ class Merit:
         return out
 
 
-def optimize(lens, fno, layout=None, iters=60, verbose=0, npup=11):
+def optimize(lens, fno, layout=None, iters=60, verbose=0, npup=11, **mkw):
     lens.epd = EFL_TARGET / fno
     layout = var_layout(lens) if layout is None else layout
-    m = Merit(lens, layout, npup=npup)
+    m = Merit(lens, layout, npup=npup, **mkw)
     x0 = get_x(lens, layout)
     lo, hi = bounds(lens, layout)
     x0 = np.clip(x0, lo + 1e-9, hi - 1e-9)
@@ -291,9 +305,9 @@ def load(path):
     return L
 
 
-def staged(lens, verbose=True, iters=(150, 100, 250)):
+def staged(lens, verbose=True, iters=(150, 100, 250), **mkw):
     for fno, it in zip((2.8, 2.2, FNO_TARGET), iters):
-        lens, info = optimize(lens, fno, iters=it)
+        lens, info = optimize(lens, fno, iters=it, **mkw)
         if verbose:
             print(f"stage f/{fno}:"); report(info)
     return lens, info

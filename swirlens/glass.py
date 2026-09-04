@@ -46,6 +46,16 @@ ND_REF = {
 }
 
 
+# Full SCHOTT catalogue (122 glasses) extracted from the SCHOTT optical glass
+# Excel table (2018) bundled with the opticalglass package; the hand-typed
+# SELLMEIER/THERMAL entries above are kept as an independent cross-check.
+import json as _json, os as _os
+_CAT_PATH = _os.path.join(_os.path.dirname(__file__), "schott_catalog.json")
+CATALOG = _json.load(open(_CAT_PATH)) if _os.path.exists(_CAT_PATH) else {}
+for _g, _d in CATALOG.items():
+    SELLMEIER.setdefault(_g, tuple(_d["sellmeier"]))
+
+
 def index(name, lam_um):
     """Refractive index of `name` at wavelength(s) lam_um (micrometres)."""
     lam = np.asarray(lam_um, dtype=float)
@@ -71,7 +81,7 @@ def swir_partial(name, lam_short=0.9, lam_mid=1.3, lam_long=1.7):
 
 def selfcheck(tol=2e-4):
     bad = []
-    for g, nd in ND_REF.items():
+    for g, nd in list(ND_REF.items()) + [(g, d["nd"]) for g, d in CATALOG.items()]:
         n = float(index(g, 0.58756))
         if abs(n - nd) > tol:
             bad.append((g, n, nd))
@@ -97,6 +107,9 @@ THERMAL = {
     "N-SF6":    dict(D0=-4.93e-6, D1=7.02e-9, D2=-2.4e-11, E0=9.84e-7, E1=1.54e-9, lTK=0.29, alpha=9.03e-6, rho=3.369),
     "N-LAK9":   dict(D0=2.11e-6, D1=1.11e-8, D2=1.82e-12, E0=4.74e-7, E1=-3.47e-10, lTK=0.146, alpha=6.3e-6, rho=3.51),
 }
+for _g, _d in CATALOG.items():
+    THERMAL.setdefault(_g, dict(D0=_d["D0"], D1=_d["D1"], D2=_d["D2"], E0=_d["E0"], E1=_d["E1"], lTK=_d["lTK"],
+                                alpha=_d["alpha"], rho=_d["rho"]))
 T_REF = 20.0  # C
 
 

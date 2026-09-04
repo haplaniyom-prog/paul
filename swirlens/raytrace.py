@@ -255,6 +255,26 @@ class Lens:
             s.sd = sd + margin
         return sds
 
+    # -------------------------------------------------------------- thermal
+    def at_temperature(self, T, alpha_housing, alpha_camera=23.6e-6, ffd=17.526, T0=20.0):
+        """Copy of the lens soaked at temperature T (C): glass radii/thickness
+        scale with the glass CTE and indices follow the SCHOTT dn/dT model;
+        air gaps scale with the housing CTE; the flange-to-sensor part of the
+        last gap scales with the camera-body CTE."""
+        L = self.copy(); dT = T - T0; n = len(L.surfaces)
+        for k, s in enumerate(L.surfaces):
+            if s.glass != "AIR":
+                a = G.THERMAL[s.glass]["alpha"]
+                s.c = s.c / (1 + a * dT); s.t = s.t * (1 + a * dT); s.T = T
+            elif k == n - 1:
+                s.t = (s.t - ffd) * (1 + alpha_housing * dT) + ffd * (1 + alpha_camera * dT)
+            else:
+                s.t = s.t * (1 + alpha_housing * dT)
+        for k, s in enumerate(L.surfaces):   # rear (glass->air) surface belongs to the element
+            if s.glass == "AIR" and k > 0 and L.surfaces[k - 1].glass != "AIR":
+                s.c = s.c / (1 + G.THERMAL[L.surfaces[k - 1].glass]["alpha"] * dT)
+        return L
+
     # ------------------------------------------------------------ utilities
     def copy(self):
         import copy
