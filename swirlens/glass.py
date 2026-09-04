@@ -84,3 +84,38 @@ if __name__ == "__main__":
     for g in SELLMEIER:
         print(f"{g:10s} {float(index(g,0.9)):8.4f} {float(index(g,1.3)):8.4f} "
               f"{float(index(g,1.7)):8.4f} {swir_abbe(g):8.2f} {swir_partial(g):8.4f}")
+
+
+# ------------------------------------------------------------ thermal data
+# SCHOTT dn/dT dispersion constants (D0, D1, D2, E0, E1, lambda_TK [um]),
+# thermal expansion alpha(-30/+70 C) [1e-6/K] and density [g/cm3].
+# Source: SCHOTT optical glass catalogue (Excel table, as bundled in the
+# opticalglass package, 2018 edition).
+THERMAL = {
+    "N-PSK53A": dict(D0=-9.28e-6, D1=7.19e-9, D2=1.45e-12, E0=4.06e-7, E1=3.17e-10, lTK=0.19, alpha=9.56e-6, rho=3.568),
+    "N-KZFS4":  dict(D0=1.81e-6, D1=1.16e-8, D2=-7.99e-12, E0=6.2e-7, E1=7.94e-10, lTK=0.205, alpha=7.3e-6, rho=3.002),
+    "N-SF6":    dict(D0=-4.93e-6, D1=7.02e-9, D2=-2.4e-11, E0=9.84e-7, E1=1.54e-9, lTK=0.29, alpha=9.03e-6, rho=3.369),
+    "N-LAK9":   dict(D0=2.11e-6, D1=1.11e-8, D2=1.82e-12, E0=4.74e-7, E1=-3.47e-10, lTK=0.146, alpha=6.3e-6, rho=3.51),
+}
+T_REF = 20.0  # C
+
+
+def n_air(lam_um, T_c=20.0, P_MPa=0.10133):
+    """Refractive index of air (SCHOTT TIE-19 formula)."""
+    lam = np.asarray(lam_um, float)
+    n15 = 1.0 + (6432.8 + 2949810.0 * lam ** 2 / (146.0 * lam ** 2 - 1.0)
+                 + 25540.0 * lam ** 2 / (41.0 * lam ** 2 - 1.0)) * 1e-8
+    return 1.0 + (n15 - 1.0) * (P_MPa / 0.10133) / (1.0 + 3.4785e-3 * (T_c - 15.0))
+
+
+def index_T(name, lam_um, T_c):
+    """Refractive index relative to air at temperature T_c (SCHOTT dn/dT model)."""
+    lam = np.asarray(lam_um, float)
+    n0 = index(name, lam)                       # relative index at 20 C
+    if name in ("AIR", "", None) or name not in THERMAL:
+        return n0
+    d = THERMAL[name]; dT = T_c - T_REF
+    dn_abs = (n0 ** 2 - 1.0) / (2.0 * n0) * (d["D0"] * dT + d["D1"] * dT ** 2 + d["D2"] * dT ** 3
+                                             + (d["E0"] * dT + d["E1"] * dT ** 2) / (lam ** 2 - d["lTK"] ** 2))
+    n_abs0 = n0 * n_air(lam, T_REF)
+    return (n_abs0 + dn_abs) / n_air(lam, T_c)

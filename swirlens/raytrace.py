@@ -24,6 +24,7 @@ class Surface:
     sd: float = 0.0     # clear semi-diameter (mm); filled by set_apertures()
     stop: bool = False
     comment: str = ""
+    T: float = None      # temperature (C) for thermal index model; None = 20 C catalogue
 
     @property
     def R(self):
@@ -47,7 +48,11 @@ class Lens:
 
     def n_after(self, lam):
         """Index after each surface for wavelength lam (scalar or array)."""
-        return np.array([G.index(s.glass, lam) for s in self.surfaces])
+        return np.array([self._index(s, lam) for s in self.surfaces])
+
+    @staticmethod
+    def _index(s, lam):
+        return G.index_T(s.glass, lam, s.T) if s.T is not None else G.index(s.glass, lam)
 
     def vertex_z(self):
         z = np.concatenate([[0.0], np.cumsum([s.t for s in self.surfaces])])
@@ -206,7 +211,7 @@ class Lens:
             # surface normal
             nrm = np.stack([-c * P[:, 0], -c * P[:, 1], 1.0 - c * P[:, 2]], axis=1)
             nrm /= np.linalg.norm(nrm, axis=1, keepdims=True)
-            n_out = np.asarray(G.index(s.glass, lam), float) * np.ones(N)
+            n_out = np.asarray(self._index(s, lam), float) * np.ones(N)
             if k == last and upto is not None:
                 pass
             mu = n_in / n_out

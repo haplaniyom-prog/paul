@@ -174,7 +174,27 @@ kaydırdığını gösterir.
   bant geçiren filtre**. Filtre C-mount içine konursa BFL filtre kalınlığının ~⅓'ü kadar uzar; 1.24 mm boşluk
   ~3 mm filtre için yeterlidir (odak ayarı ile).
 - Merkezleme için sıkı hassasiyet gerekmez: 20 µm eleman kaçıklığı PSF tekdüzeliğini ≤ 0,5 µm bozar.
-- Kütle tahmini (cam): ~160 g; hücre ve C-mount arayüzü ile ~400–450 g.
+- Kütle (cam, katalog yoğunlukları): ≈ 188 g; alüminyum hücre ve C-mount arayüzü ile ≈ 450 g.
+
+### Termal analiz (dört gövde malzemesi)
+`python -m swirlens.thermal` → `results/thermal.png`, `results/thermal.json`. Homojen sıcaklık, −40…+70 °C, sabit odak;
+cam indisleri SCHOTT dn/dT modeli, cam ve gövde genleşmesi, alüminyum kamera gövdesi (flanş→sensör).
+
+![termal](results/thermal.png)
+
+| Gövde | CTE (10⁻⁶/K) | Odak kayması −40 / +70 °C | RMS eksen −40/20/70 °C | RMS kenar −40/20/70 °C | 3×3 enerji min −40 / +70 °C | EFL ppm/K |
+|---|---|---|---|---|---|---|
+| Alüminyum 6061 | 23.6 | -60 / +55 µm | 29 / 18 / 17 µm | 33 / 18 / 14 µm | 58 % / 96 % | 42 |
+| Paslanmaz çelik 304 | 17.3 | -73 / +65 µm | 31 / 18 / 18 µm | 36 / 18 / 15 µm | 54 % / 93 % | 44 |
+| Titanyum Ti-6Al-4V | 8.6 | -91 / +81 µm | 35 / 18 / 20 µm | 40 / 18 / 17 µm | 48 % / 90 % | 46 |
+| Invar 36 | 1.3 | -106 / +93 µm | 38 / 18 / 22 µm | 44 / 18 / 19 µm | 45 % / 87 % | 48 |
+
+- Baskın etki camdır (N-PSK53A dn/dT < 0, N-KZFS4 dn/dT > 0 aynı yöne çalışır; yüksek eleman güçleri indis değişimini
+  EFL'ye ~4–5 kat büyütür). Gövde genleşmesi ters yönde ve zayıftır: **hiçbir metal tek başına atermal değildir**, alüminyum
+  en iyi, Invar en kötüdür. Atermal gövde katsayısı ≈ 55·10⁻⁶/K (polimer bölgesi).
+- Plaka ölçeği (EFL) 42–48 ppm/K sürüklenir (kenarda ±0,9 px / ±55 K) → sıcaklık indeksli kalibrasyon tablosu gerekir.
+- Çözümler: montajda soğuk tarafa odak ön-ofseti (Al gövde: -60 µm → en kötü RMS 25 µm),
+  ya da Al gövde ile seri ≈ 13 mm POM / ≈ 11 mm PTFE telafi ara parçası (pasif atermalizasyon), ya da aktif odak. Ayrıntı: `docs/tasarim_raporu.html` §14.
 
 ## 7. Kodun kullanımı
 
@@ -211,5 +231,4 @@ MTF, kare-içi/çevrelenen enerji, piksel-fazı merkezleme hatası simülasyonu,
   kabul edildi; pencere odak ayarıyla telafi edilir (bkz. §6).
 - Sellmeier katsayıları SCHOTT kataloğundan alınmıştır ve nd ile doğrulanmıştır; üretim öncesi
   gerçek eriyik verileriyle yeniden optimizasyon önerilir.
-- Isıl analiz yapılmamıştır; −40…+70 °C aralığında odak kayması ayrı çalışılmalıdır (alüminyum
-  hücre ile birkaç on µm mertebesi beklenir).
+- Isıl analiz homojen sıcaklık için yapılmıştır (§6, rapor §14); gradyanlar ve geçici rejim ayrı çalışılmalıdır.

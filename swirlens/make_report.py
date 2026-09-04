@@ -155,6 +155,38 @@ def build(rd="results", out="docs/tasarim_raporu.html"):
                    [[k + "°", fmt(v["rms_um"]), f"{v['ee_1px']*100:.0f} %", f"{v['ee_2px']*100:.0f} %", f"{v['ee_3px']*100:.0f} %",
                      f"{fmt(v['centroid_bias_rms_px'],3)} / {fmt(v['centroid_bias_max_px'],3)}"] for k, v in hu.items()],
                    "num", ["", "r", "r", "r", "r", "r"]) if hu else ""
+    TH = json.load(open(f"{rd}/thermal.json")) if os.path.exists(f"{rd}/thermal.json") else None
+    th_tbl = th_budget = th_comp = th_bias = th_glass = ""
+    if TH:
+        Ts = TH["Ts"]; i40 = Ts.index(-40); i20 = Ts.index(20); i70 = Ts.index(70)
+        rows = []
+        for name, d in TH["materials"].items():
+            r = d["rows"]
+            rows.append([name, fmt(d["cte"]), f"{r[i40]['defocus_um']:+.0f} / {r[i70]['defocus_um']:+.0f}",
+                         f"{r[i40]['rms_um'][0]:.0f} / {r[i20]['rms_um'][0]:.0f} / {r[i70]['rms_um'][0]:.0f}",
+                         f"{r[i40]['rms_um'][-1]:.0f} / {r[i20]['rms_um'][-1]:.0f} / {r[i70]['rms_um'][-1]:.0f}",
+                         f"{min(r[i40]['ee3'])*100:.0f} % / {min(r[i70]['ee3'])*100:.0f} %", fmt(d["efl_ppm_per_K"])])
+        th_tbl = table(["Gövde malzemesi", "CTE (10⁻⁶/K)", "Odak kayması −40 / +70 °C (µm)", "RMS eksen −40/20/70 °C (µm)",
+                        "RMS kenar −40/20/70 °C (µm)", "3×3 enerji min. −40 / +70 °C", "EFL sürüklenmesi (ppm/K)"],
+                       rows, "num", ["", "r", "r", "r", "r", "r", "r"])
+        b = TH["budget_70C_um"]; e = TH["efl_budget_70C_ppm"]
+        th_budget = table(["Bileşen (+50 K, 20→70 °C)", "Odak kayması (µm)", "EFL değişimi (ppm)"], [
+            ["Cam kırılma indisi (dn/dT, hava indisi dâhil)", f"{b['glass_index']:+.0f}", f"{e['glass_index']:+.0f}"],
+            ["Cam genleşmesi (yarıçap ve kalınlık)", f"{b['glass_expansion']:+.0f}", f"{e['glass_expansion']:+.0f}"],
+            ["Kamera gövdesi (Al, flanş→sensör 17,526 mm)", f"{b['camera_body_Al']:+.0f}", "0"],
+            ["Gövde hava aralıkları, CTE başına 10⁻⁶/K", f"{b['housing_per_1e6']:+.1f}", f"{e['housing_per_1e6']:+.0f}"],
+        ], "num", ["", "r", "r"])
+        th_comp = table(["Gövde", "POM (110·10⁻⁶/K)", "PTFE (120·10⁻⁶/K)", "PA6 (80·10⁻⁶/K)"],
+                        [[k] + [fmt(v[kk]) + " mm" for kk in ("POM (110e-6/K)", "PTFE (120e-6/K)", "PA6 (80e-6/K)")]
+                         for k, v in TH["compensator_spacer_mm"].items()], "num", ["", "r", "r", "r"])
+        th_bias = table(["Gövde", "Montaj odak ön-ofseti (µm)", "En kötü RMS −40…+70 °C (µm)", "En düşük 3×3 enerji"],
+                        [[k, f"{v['bias_um']:+.0f}", fmt(v["worst_rms_um"]), f"{v['min_ee3']*100:.0f} %"]
+                         for k, v in TH["focus_bias_opt"].items()], "num", ["", "r", "r", "r"])
+        th_glass = table(["Cam", "dn/dT (rel., 1,3 µm, 20→70 °C) 10⁻⁶/K", "α (−30/+70 °C) 10⁻⁶/K", "Yoğunluk g/cm³"],
+                         [[g, fmt((float(G.index_T(g, 1.3, 70)) - float(G.index_T(g, 1.3, 20))) / 50 * 1e6, 2),
+                           fmt(v["alpha"] * 1e6, 2), fmt(v["rho"], 3)] for g, v in TH["glass_thermal"].items()],
+                         "num", ["", "r", "r", "r"])
+    mass_g = TH["glass_mass_g"] if TH else 160.0
     m = S
     # ---------------------------------------------------------------- html
     css = """
@@ -266,7 +298,7 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 ["Etkin odak uzaklığı (1,3 µm)",f"{fmt(misc['efl'],3)} mm"],["Giriş gözbebeği çapı / f-sayısı",f"{fmt(misc['epd'],2)} mm / f/{fmt(misc['fno'],2)}"],
 ["Arka odak uzaklığı (BFL)",f"{fmt(misc['bfl'],3)} mm"],["Arka tepe → flanş",f"{fmt(misc['rear_vertex_to_flange'],2)} mm"],
 ["Çıkış gözbebeği konumu",f"görüntüden {ep:.1f} mm önde"],["Toplam uzunluk S1 → görüntü",f"{fmt(misc['track'],2)} mm"],
-["Görüntü yüksekliği (6,24°)","8,18 mm (yarı köşegen 8,2 mm)"],["Cam kütlesi (tahmin)","≈ 160 g"],
+["Görüntü yüksekliği (6,24°)","8,18 mm (yarı köşegen 8,2 mm)"],["Cam kütlesi (katalog yoğunlukları)",f"≈ {mass_g:.0f} g"],
 ],"num",["","r"])}
 
 <h2><span>5</span>Optimizasyon yöntemi</h2>
@@ -328,19 +360,39 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 {sens_tbl}
 <p>Yarıçap ve kalınlık hataları yalnızca odak düzeltmesi gerektirir (en hassası E6–düzleştirici aralığı: +50 µm → ≈ −135 µm odak). Kaçıklıklar PSF tekdüzeliğini ≤ 0,5 µm bozar; boresight kaymaları (≤ 17 µm / 20 µm kaçıklık) uçuşta yıldızlarla kalibre edilir, kritik olan ısıl/mekanik kararlılıktır.</p>
 
-<h2><span>14</span>Mekanik ve entegrasyon</h2>
+<h2><span>14</span>Termal analiz — dört gövde malzemesi</h2>
+<p>Homojen sıcaklık değişimi (−40…+70 °C, referans 20 °C) modeli: cam yarıçapları ve kalınlıkları camın kendi genleşme katsayısıyla, hava aralıkları gövde malzemesinin katsayısıyla, flanş–sensör mesafesi (17,526 mm) alüminyum kamera gövdesiyle (23,6·10⁻⁶/K) ölçeklenir; cam indisleri SCHOTT dn/dT dispersiyon formülüyle (D₀…E₁, λ<sub>TK</sub>) ve o sıcaklıktaki hava indisine göre hesaplanır. Odak mekanizması yoktur (sabit odak); tablolar 20 °C'de ayarlanmış objektifin sıcaklıkla davranışını verir.</p>
+{th_glass}
+{fig("thermal.png","Soldan sağa: sensördeki odak kayması (20 °C'ye göre; gri bant ±50 µm tasarım toleransı), eksen ve kenar alanda polikromatik RMS nokta yarıçapı (gri bant nominal 16–23 µm), eksen/kenar minimum 3×3 piksel kare-içi enerji.")}
+{th_tbl}
+<h3>Bileşen bütçesi</h3>
+<p>Odak kaymasının ve odak uzaklığı değişiminin kaynakları (+50 K için, doğrusal):</p>
+{th_budget}
+<div class="key"><p><b>Sonuç.</b> Baskın etki camdır: N-PSK53A'nın negatif ve N-KZFS4'ün pozitif dn/dT'si aynı yöne çalışır ve tasarımın yüksek tekil eleman güçleri (E2 f ≈ +32 mm, E3 f ≈ −42 mm) indis değişimini EFL'ye ~4–5 kat büyütür. Gövde genleşmesi ise ters yönde ve zayıf bir kaldıraçtır (10⁻⁶/K başına −1,7 µm). Bu yüzden <b>dört malzemenin hiçbiri tek başına atermal değildir</b> ve sıralama beklentinin tersidir: yüksek genleşmeli alüminyum camın etkisini en çok telafi eder (−60/+55 µm), düşük genleşmeli Invar en kötüsüdür (−106/+93 µm). Atermal davranış için gerekli gövde katsayısı ≈ {fmt(TH['alpha_athermal_1e6'],0) if TH else '—'}·10⁻⁶/K'dir; bu değer metallerin dışında, polimer/kompozit bölgesindedir.</p></div>
+<h3>Odak uzaklığı (plaka ölçeği) sürüklenmesi</h3>
+<p>EFL sıcaklıkla {fmt(min(d['efl_ppm_per_K'] for d in TH['materials'].values()),0) if TH else '—'}–{fmt(max(d['efl_ppm_per_K'] for d in TH['materials'].values()),0) if TH else '—'} ppm/K değişir (−40 °C'de {fmt(TH['efl_rows'][0]['efl'],3) if TH else '—'} mm, +70 °C'de {fmt(TH['efl_rows'][2]['efl'],3) if TH else '—'} mm). Bu, alan kenarındaki yıldızı ±55 K'da yaklaşık ±0,9 piksel kaydırır; gövde malzemesinden neredeyse bağımsızdır (%95'i camdan gelir). Yıldız izleyicide bu etki sıcaklık ölçümüyle indekslenmiş bir plaka-ölçeği kalibrasyon tablosuyla giderilir; tek sıcaklıkta kalibrasyon yeterli değildir.</p>
+<h3>Çözüm seçenekleri</h3>
+<p><b>1. Montaj odak ön-ofseti (ek maliyet yok).</b> Objektif 20 °C'de nominal yerine soğuk tarafa doğru ön-ofsetle odaklanırsa −40…+70 °C aralığındaki en kötü PSF küçülür:</p>
+{th_bias}
+<p><b>2. Pasif atermalizasyon.</b> Metal gövde ile seri çalışan yüksek genleşmeli bir ara parça (spacer) kalan odak kaymasını sıfırlar; gereken uzunluklar (+50 K'da tam telafi, doğrusal):</p>
+{th_comp}
+<p>Alüminyum gövde ile ≈ 12–13 mm POM ya da ≈ 11 mm PTFE ara parça yeterlidir; bu parça C-mount adaptörü ile mercek tüpü arasına yerleştirilebilir. Polimerlerin genleşme katsayısı sıcaklığa bağlı ve nem hassasiyeti olduğu için ±%20 hata ile bile kalan kayma ±15 µm'yi aşmaz.</p>
+<p><b>3. Aktif odak.</b> Motorlu ya da ısıya duyarlı (bimetal) odak ayarı; ±0,1 mm strok yeterlidir. Bu seçenek plaka ölçeği sürüklenmesini gidermez; kalibrasyon tablosu her durumda gerekir.</p>
+<p><b>Sınırlamalar:</b> radyal ve eksenel sıcaklık gradyanları, camların ısıl iletim gecikmesi ve kamera gövdesinin gerçek malzemesi/ölçüsü modelde yoktur; kamera flanş–sensör mesafesinin sıcaklıkla değişimi (17,526 mm alüminyum varsayımıyla ±23 µm) üreticiden doğrulanmalıdır.</p>
+
+<h2><span>15</span>Mekanik ve entegrasyon</h2>
 <ul>
 <li>Toplam uzunluk S1 → görüntü {fmt(misc['track'],1)} mm; flanştan öne ≈ {fmt(misc['track']-17.526,1)} mm; ön eleman çapı ≈ 48 mm (kamera gövdesi 55 × 55 mm ile uyumlu). Arka eleman serbest açıklığı 20,5 mm, arka tepe flanşın {fmt(misc['rear_vertex_to_flange'],2)} mm önünde.</li>
-<li>Odaklama: ±0,3 mm ayar (helikoid veya shim). Montaj kriteri: kolimatör/yıldız görüntüsünde 3×3 kare-içi enerji ≥ %95 ve 1×1 ≤ %40 (RMS ≈ 17–18 µm). PSF ±50 µm odak hatasına toleranslıdır.</li>
+<li>Odaklama: ±0,3 mm ayar (helikoid veya shim); gövde malzemesi ve termal ön-ofset için Bölüm 14. Montaj kriteri: kolimatör/yıldız görüntüsünde 3×3 kare-içi enerji ≥ %95 ve 1×1 ≤ %40 (RMS ≈ 17–18 µm). PSF ±50 µm odak hatasına toleranslıdır.</li>
 <li>Gündüz kullanım: derin, siyah anodize güneş siperliği (yarım görüş alanı 6,3°), yivli iç yüzeyler, 0,9–1,7 µm geniş bant AR kaplama (&lt; %0,5); gök fonu için 1,2–1,7 µm (veya 1,4–1,7 µm) bant geçiren filtre. Filtre C-mount içine konursa BFL kalınlığın ≈ ⅓'ü kadar uzar; mevcut {fmt(misc['rear_vertex_to_flange'],2)} mm boşluk ≈ 3 mm filtre için yeterlidir.</li>
-<li>Camlar: SCHOTT N-PSK53A, N-KZFS4, N-SF6; 1,7 µm'ye kadar iç geçirgenlik yüksek. Cam kütlesi ≈ 160 g, hücreyle ≈ 400–450 g.</li>
+<li>Camlar: SCHOTT N-PSK53A, N-KZFS4, N-SF6; 1,7 µm'ye kadar iç geçirgenlik yüksek. Cam kütlesi ≈ {mass_g:.0f} g, alüminyum hücreyle ≈ 450 g (titanyum/çelik/Invar hücre ile 550–650 g).</li>
 </ul>
 
-<h2><span>15</span>Sınırlamalar ve sonraki adımlar</h2>
+<h2><span>16</span>Sınırlamalar ve sonraki adımlar</h2>
 <ul>
 <li>Kamera penceresi/soğuk filtre kalınlığı veri sayfasında verilmediği için görüntü uzayı hava kabul edildi; pencere odak ayarıyla telafi edilir.</li>
 <li>Sellmeier katsayıları SCHOTT kataloğundandır ve n<sub>d</sub> ile doğrulanmıştır; üretim öncesi eriyik verileriyle yeniden optimizasyon önerilir.</li>
-<li>Isıl analiz yapılmamıştır; −40…+70 °C için odak kayması ve PSF büyüklüğü değişimi hücre malzemesiyle birlikte çalışılmalıdır. Blur'un odak duyarsızlığı bu adımı kolaylaştırır.</li>
+<li>Isıl analiz homojen sıcaklık için yapılmıştır (Bölüm 14); gradyanlar ve geçici rejim ayrı çalışılmalıdır.</li>
 <li>Merkezleme simülasyonu gürültüsüz ve basit ağırlık merkeziyle yapılmıştır (geometrik ve Huygens PSF ile); gerçek algoritma ve gök fonu gürültüsü ile uçtan uca SNR/merkezleme bütçesi bir sonraki adımdır.</li>
 <li>Hayalet (ghost) ve saçılma analizi yapılmamıştır; gündüz kullanımında güneş açısı bütçesiyle birlikte değerlendirilmelidir.</li>
 </ul>

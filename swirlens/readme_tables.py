@@ -33,6 +33,14 @@ def build():
     hu_line = ("Huygens düzlem-dalgacık toplamıyla hesaplanan polikromatik kırınım PSF'si geometrik sonucu doğrular: RMS yarıçap "
                + "–".join(f"{min(v['rms_um'] for v in hu.values()):.1f}".split()) + f"–{max(v['rms_um'] for v in hu.values()):.1f} µm, 3×3 piksel enerjisi ≥ {min(v['ee_3px'] for v in hu.values())*100:.0f} %, "
                f"kırınım PSF'siyle sistematik merkezleme hatası ≤ {max(v['centroid_bias_rms_px'] for v in hu.values()):.3f} px RMS (`results/huygens_psf.png`).") if hu else ""
+    th = json.load(open("results/thermal.json"))
+    Ts = th["Ts"]; i40 = Ts.index(-40); i20 = Ts.index(20); i70 = Ts.index(70)
+    th_tbl = ("| Gövde | CTE (10⁻⁶/K) | Odak kayması −40 / +70 °C | RMS eksen −40/20/70 °C | RMS kenar −40/20/70 °C | 3×3 enerji min −40 / +70 °C | EFL ppm/K |\n|---|---|---|---|---|---|---|\n"
+              + "\n".join(f"| {n} | {d['cte']} | {d['rows'][i40]['defocus_um']:+.0f} / {d['rows'][i70]['defocus_um']:+.0f} µm | "
+                          f"{d['rows'][i40]['rms_um'][0]:.0f} / {d['rows'][i20]['rms_um'][0]:.0f} / {d['rows'][i70]['rms_um'][0]:.0f} µm | "
+                          f"{d['rows'][i40]['rms_um'][-1]:.0f} / {d['rows'][i20]['rms_um'][-1]:.0f} / {d['rows'][i70]['rms_um'][-1]:.0f} µm | "
+                          f"{min(d['rows'][i40]['ee3'])*100:.0f} % / {min(d['rows'][i70]['ee3'])*100:.0f} % | {d['efl_ppm_per_K']:.0f} |"
+                          for n, d in th["materials"].items()))
     lam_txt = " · ".join(f"{l} µm: {v[0]:.0f} / {v[1]:.0f}" for l, v in lam_rms.items()) if lam_rms else ""
     return f"""## 3. Reçete
 
@@ -117,7 +125,22 @@ kaydırdığını gösterir.
   bant geçiren filtre**. Filtre C-mount içine konursa BFL filtre kalınlığının ~⅓'ü kadar uzar; {fg:.2f} mm boşluk
   ~3 mm filtre için yeterlidir (odak ayarı ile).
 - Merkezleme için sıkı hassasiyet gerekmez: 20 µm eleman kaçıklığı PSF tekdüzeliğini ≤ 0,5 µm bozar.
-- Kütle tahmini (cam): ~160 g; hücre ve C-mount arayüzü ile ~400–450 g.
+- Kütle (cam, katalog yoğunlukları): ≈ {th['glass_mass_g']:.0f} g; alüminyum hücre ve C-mount arayüzü ile ≈ 450 g.
+
+### Termal analiz (dört gövde malzemesi)
+`python -m swirlens.thermal` → `results/thermal.png`, `results/thermal.json`. Homojen sıcaklık, −40…+70 °C, sabit odak;
+cam indisleri SCHOTT dn/dT modeli, cam ve gövde genleşmesi, alüminyum kamera gövdesi (flanş→sensör).
+
+![termal](results/thermal.png)
+
+{th_tbl}
+
+- Baskın etki camdır (N-PSK53A dn/dT < 0, N-KZFS4 dn/dT > 0 aynı yöne çalışır; yüksek eleman güçleri indis değişimini
+  EFL'ye ~4–5 kat büyütür). Gövde genleşmesi ters yönde ve zayıftır: **hiçbir metal tek başına atermal değildir**, alüminyum
+  en iyi, Invar en kötüdür. Atermal gövde katsayısı ≈ {th['alpha_athermal_1e6']:.0f}·10⁻⁶/K (polimer bölgesi).
+- Plaka ölçeği (EFL) {min(d['efl_ppm_per_K'] for d in th['materials'].values()):.0f}–{max(d['efl_ppm_per_K'] for d in th['materials'].values()):.0f} ppm/K sürüklenir (kenarda ±0,9 px / ±55 K) → sıcaklık indeksli kalibrasyon tablosu gerekir.
+- Çözümler: montajda soğuk tarafa odak ön-ofseti (Al gövde: {th['focus_bias_opt']['Alüminyum 6061']['bias_um']:+.0f} µm → en kötü RMS {th['focus_bias_opt']['Alüminyum 6061']['worst_rms_um']:.0f} µm),
+  ya da Al gövde ile seri ≈ {th['compensator_spacer_mm']['Alüminyum 6061']['POM (110e-6/K)']:.0f} mm POM / ≈ {th['compensator_spacer_mm']['Alüminyum 6061']['PTFE (120e-6/K)']:.0f} mm PTFE telafi ara parçası (pasif atermalizasyon), ya da aktif odak. Ayrıntı: `docs/tasarim_raporu.html` §14.
 
 """
 
