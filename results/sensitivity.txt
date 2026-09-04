@@ -1,31 +1,31 @@
-Baseline field-averaged polychromatic RMS spot: 17.81 um
+Baseline field-averaged polychromatic RMS spot: 17.77 um
 (focus re-adjusted to restore the nominal blurred RMS; decentre rows: dRMS = change of field peak-to-peak RMS; dRMS = change of field-averaged RMS spot)
 perturbation                              dRMS (um)  refocus (um)  boresight (um)
-Element S12-S13 decentre 20 um                 1.04           0.0           -9.70
-Element S3-S5 decentre 20 um                  -0.30           0.0           14.72
-Element S10-S11 decentre 20 um                 0.22           0.0           16.62
-Element S7-S9 decentre 20 um                  -0.21           0.0           -6.54
-Element S1-S2 decentre 20 um                  -0.13           0.0            4.93
-S8 thickness +0.050 mm                        -0.00          -0.2            0.00
-S9 thickness +0.050 mm                        -0.00         -19.8            0.00
-S8 radius +0.1%                                0.00           0.6            0.00
-S3 thickness +0.050 mm                        -0.00         -74.0            0.00
-S2 radius +0.1%                               -0.00         -24.2            0.00
-S7 thickness +0.050 mm                        -0.00          -0.1            0.00
-S10 radius +0.1%                              -0.00          25.7            0.00
-S5 radius +0.1%                                0.00         -30.5            0.00
-S10 thickness +0.050 mm                       -0.00         -42.9            0.00
-S2 thickness +0.050 mm                        -0.00          -3.0            0.00
-S11 thickness +0.050 mm                        0.00        -135.0            0.00
-S11 radius +0.1%                              -0.00          17.6            0.00
-S5 thickness +0.050 mm                         0.00         -56.4            0.00
-S1 radius +0.1%                                0.00          44.4            0.00
-S13 radius +0.1%                               0.00           3.9            0.00
-S9 radius +0.1%                                0.00          23.4            0.00
-S12 thickness +0.050 mm                        0.00         -17.2            0.00
-S4 radius +0.1%                                0.00           2.7            0.00
-S4 thickness +0.050 mm                         0.00         -78.2            0.00
-S7 radius +0.1%                               -0.00         -50.6            0.00
-S12 radius +0.1%                               0.00         -18.4            0.00
-S3 radius +0.1%                                0.00          -2.3            0.00
-S1 thickness +0.050 mm                        -0.00         -10.6            0.00
+Element S12-S13 decentre 20 um                 1.21           0.0          -11.66
+Element S1-S2 decentre 20 um                   0.32           0.0           11.21
+Element S3-S5 decentre 20 um                   0.30           0.0           11.07
+Element S10-S11 decentre 20 um                 0.12           0.0           13.07
+Element S7-S9 decentre 20 um                   0.06           0.0           -3.66
+S4 thickness +0.050 mm                        -0.00         -84.0            0.00
+S7 thickness +0.050 mm                        -0.00         -14.0            0.00
+S8 thickness +0.050 mm                        -0.00         -13.6            0.00
+S1 radius +0.1%                               -0.00         -15.5            0.00
+S1 thickness +0.050 mm                        -0.00         -33.4            0.00
+S2 radius +0.1%                               -0.00         -32.6            0.00
+S4 radius +0.1%                               -0.00          -2.5            0.00
+S11 radius +0.1%                              -0.00          17.8            0.00
+S11 thickness +0.050 mm                        0.00        -157.9            0.00
+S9 thickness +0.050 mm                         0.00         -45.0            0.00
+S10 thickness +0.050 mm                        0.00         -45.0            0.00
+S12 radius +0.1%                              -0.00         -21.2            0.00
+S13 radius +0.1%                               0.00           3.8            0.00
+S3 radius +0.1%                                0.00         -15.0            0.00
+S9 radius +0.1%                                0.00          13.7            0.00
+S2 thickness +0.050 mm                         0.00         -17.3            0.00
+S7 radius +0.1%                                0.00         -27.6            0.00
+S12 thickness +0.050 mm                        0.00         -17.6            0.00
+S5 radius +0.1%                                0.00         -28.0            0.00
+S5 thickness +0.050 mm                         0.00         -68.3            0.00
+S3 thickness +0.050 mm                         0.00         -88.4            0.00
+S8 radius +0.1%                               -0.00          -0.6            0.00
+S10 radius +0.1%                               0.00          11.3            0.00

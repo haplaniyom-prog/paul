@@ -1,4 +1,4 @@
-# SWIR 75 mm f/1.8 C-mount objektif — Xenics Wildcat 640 gündüz yıldız izleyici
+# SWIR 75 mm f/1,8 C-mount objektif — Xenics Wildcat 640 gündüz yıldız izleyici (Rev. C)
 
 Bu depo, **Xenics Wildcat 640** (InGaAs, 640 × 512 piksel, 20 µm piksel, 12,8 × 10,24 mm aktif alan,
 16,4 mm köşegen, 0,9–1,7 µm, C-mount) kamerası için sıfırdan tasarlanmış, gündüz koşullarında
@@ -51,39 +51,40 @@ SWIR'de cam dispersiyonu görünür bölgeden çok farklıdır. Depodaki `swirle
 kataloğu ile 0,9/1,3/1,7 µm için SWIR Abbe sayısı `V = (n1.3−1)/(n0.9−n1.7)` ve kısmi dispersiyon
 `P = (n0.9−n1.3)/(n0.9−n1.7)` hesaplandı. Görünürde klasik olan N-LAK9/N-SF6 çifti SWIR'de
 ΔV ≈ 8 ve büyük ΔP verir (ikincil spektrum → tüm alanlarda ~30 µm RMS; denendi ve elendi).
-16 cam çifti otomatik tarandı (`swirlens/glass_search.py`); en iyi çift:
+16 cam çifti (1. tur) ve tam SCHOTT kataloğundan analitik ön elemeyle 64 çift (2. tur, termal ağırlıklı) otomatik tarandı (`swirlens/glass_search.py`, `swirlens/glass_search2.py`); seçilen camlar:
 
 | Cam | n(1,3 µm) | V_SWIR | P_SWIR | Rol |
 |---|---|---|---|---|
 | **N-PSK53A** | 1,603 | 59,3 | 0,540 | pozitif elemanlar |
-| **N-KZFS4** | 1,593 | 43,0 | 0,540 | negatif dublet elemanları |
+| **N-KZFS11** | 1,616 | 41,8 | 0,542 | negatif dublet elemanları |
 | **N-SF6** | 1,768 | 40,2 | 0,612 | alan düzleştirici |
 
-N-PSK53A / N-KZFS4 çiftinin SWIR kısmi dispersiyonları neredeyse eşittir (ΔP ≈ 0) → ikincil
-spektrum çok düşüktür. Bütün camlar SCHOTT standart camıdır ve 1,7 µm'ye kadar iç geçirgenliği
+N-PSK53A / N-KZFS11 çiftinin SWIR kısmi dispersiyonları neredeyse eşittir (ΔP ≈ 0,002) → ikincil
+spektrum çok düşüktür. İkinci tur taramada (64 çift, termal ağırlıklı merit, üretilebilirlik kısıtları) bu çift,
+N-PSK53A/N-KZFS4 ile başa baş çıkmış ve daha düzgün PSF / daha düşük yanal renk verdiği için seçilmiştir. Bütün camlar SCHOTT standart camıdır ve 1,7 µm'ye kadar iç geçirgenliği
 yüksektir; 0,9–1,7 µm geniş bant AR kaplama önerilir.
 
 ## 3. Reçete
 
 `results/prescription.txt` · `results/prescription.csv` · `results/swir_75mm_f18_cmount.zmx` (Zemax OpticStudio) · `results/design_final.json`
 
-EFL 75,000 mm · f/1,80 (gerçek giriş demeti çapı 41,67 mm) · BFL 18.767 mm · toplam uzunluk S1→görüntü 95.33 mm · flanştan öne 77.8 mm
+EFL 75,000 mm · f/1,80 (gerçek giriş demeti çapı 41,67 mm) · BFL 18.715 mm · toplam uzunluk S1→görüntü 89.35 mm · flanştan öne 71.8 mm
 
 | Yüzey | Yarıçap (mm) | Kalınlık (mm) | Cam | Yarı-açıklık (mm) | Not |
 |---|---|---|---|---|---|
-| 1 | 78.6901 | 6.2033 | N-PSK53A | 24.258 | E1 front |
-| 2 | 130.5318 | 0.5005 | AIR | 23.411 |  |
-| 3 | 38.0925 | 14.7948 | N-PSK53A | 22.331 | E2 (cem.) |
-| 4 | -39.3940 | 2.3932 | N-KZFS4 | 22.016 | E3 (cem.) |
-| 5 | 68.9151 | 6.2905 | AIR | 17.610 |  |
-| 6 | düz | 3.1004 | AIR | 15.752 | DURDURUCU (STOP) |
-| 7 | -48.4138 | 2.5893 | N-KZFS4 | 15.495 | E4 (cem.) |
-| 8 | 56.4485 | 12.2782 | N-PSK53A | 15.301 | E5 (cem.) |
-| 9 | -81.8148 | 4.3238 | AIR | 15.602 |  |
-| 10 | 55.5255 | 8.0748 | N-PSK53A | 15.111 | E6 |
-| 11 | -83.5148 | 12.2502 | AIR | 14.431 |  |
-| 12 | -27.4631 | 3.9988 | N-SF6 | 10.237 | E7 field flattener |
-| 13 | -81.8267 | 18.5272 | AIR | 10.208 |  |
+| 1 | 47.9374 | 5.1959 | N-PSK53A | 23.104 | E1 front |
+| 2 | 101.0615 | 0.5000 | AIR | 22.617 |  |
+| 3 | 42.3514 | 13.0000 | N-PSK53A | 21.511 | E2 (cem.) |
+| 4 | -44.5097 | 3.6036 | N-KZFS11 | 20.711 | E3 (cem.) |
+| 5 | 75.6913 | 2.4654 | AIR | 16.630 |  |
+| 6 | düz | 2.1418 | AIR | 16.324 | DURDURUCU (STOP) |
+| 7 | -87.1017 | 3.4837 | N-KZFS11 | 15.996 | E4 (cem.) |
+| 8 | 66.0926 | 12.3528 | N-PSK53A | 15.332 | E5 (cem.) |
+| 9 | -122.8113 | 4.0195 | AIR | 14.926 |  |
+| 10 | 107.9625 | 12.6901 | N-PSK53A | 14.083 | E6 |
+| 11 | -57.1981 | 7.3720 | AIR | 12.641 |  |
+| 12 | -24.6202 | 4.0000 | N-SF6 | 9.978 | E7 field flattener |
+| 13 | -82.8538 | 18.5260 | AIR | 9.982 |  |
 | IMG | düz | — | — | 8.200 | görüntü düzlemi (16,4 mm köşegen) |
 
 Yarı-açıklıklar vinyetlemesiz ışın izlerinden gelen serbest açıklıklardır; mekanik kenar için +0,5–0,8 mm eklenmelidir. Stop (yüzey 6) E4'ün 3,1 mm önünde, camdan bağımsız bir halkadır; çapı gerçek eksenel kenar ışınının 41,67 mm giriş demetiyle geçmesine göre belirlenmiştir.
@@ -94,22 +95,22 @@ Yarı-açıklıklar vinyetlemesiz ışın izlerinden gelen serbest açıklıklar
 
 | Ölçüt | Nihai (yayılmış PSF) | Keskin referans | Yıldız izleyici için anlamı |
 |---|---|---|---|
-| Polikromatik RMS nokta yarıçapı, 0° / 3,1° / 4,7° / 6,24° | 17.7 / 18.0 / 18.1 / 18.2 µm | 7.2 / 6.8 / 7.4 / 10.4 µm | hedef 18 µm ≈ σ 0,64 px (FWHM ≈ 1,5 px) |
-| Kare-içi enerji 1×1 / 2×2 / 3×3 px, eksen | 35 % / 72 % / 99 % | 86 % / 100 % / 100 % | enerji 3×3 pencerede, 1×1'de < %40 |
-| Kare-içi enerji 1×1 / 2×2 / 3×3 px, 6,24° | 34 % / 73 % / 96 % | 76 % / 96 % / 99 % | kenarda da aynı dağılım |
-| **Sistematik (piksel-fazı) merkezleme hatası**, RMS / maks., eksen | **0.035 / 0.046 px** | 0.144 / 0.187 px | 5×5 ağırlık merkezi, gürültüsüz; 0,03 px ≈ 1,7″ |
-| Sistematik merkezleme hatası, RMS / maks., 6,24° | 0.025 / 0.034 px | 0.110 / 0.154 px | |
+| Polikromatik RMS nokta yarıçapı, 0° / 3,1° / 4,7° / 6,24° | 18.1 / 17.8 / 17.6 / 17.9 µm | 9.4 / 8.5 / 9.4 / 13.8 µm | hedef 18 µm ≈ σ 0,64 px (FWHM ≈ 1,5 px) |
+| Kare-içi enerji 1×1 / 2×2 / 3×3 px, eksen | 37 % / 72 % / 97 % | 74 % / 100 % / 100 % | enerji 3×3 pencerede, 1×1'de < %40 |
+| Kare-içi enerji 1×1 / 2×2 / 3×3 px, 6,24° | 34 % / 78 % / 95 % | 53 % / 92 % / 98 % | kenarda da aynı dağılım |
+| **Sistematik (piksel-fazı) merkezleme hatası**, RMS / maks., eksen | **0.038 / 0.052 px** | 0.095 / 0.125 px | 5×5 ağırlık merkezi, gürültüsüz; 0,03 px ≈ 1,7″ |
+| Sistematik merkezleme hatası, RMS / maks., 6,24° | 0.031 / 0.046 px | 0.072 / 0.101 px | |
 | PSF şekli ⟨r⁴⟩/⟨r²⟩² | 1,8–2,0 (Gauss = 2) | 2,7–4,0 (çekirdek + hale) | pürüzsüz, yumuşak kenarlı PSF |
-| Yanal renk 1,1–1,7 µm (0,9 µm dâhil) maks., kenar | 2.6 µm (7.9 µm) | 4,1 µm (8.7 µm) | yıldız rengine bağlı merkez kayması ≤ 0,16 px, doğrusal |
-| Distorsiyon (kalibre EFL'ye göre, maks.) | 0.28 % yastık | 0.33 % | düzgün; 3. derece radyal polinomla kalibre edilir |
-| MTF @ 25 lp/mm (Nyquist), T, eksen → kenar | 0.20 → 0.24 | 0.70 → 0.56 | blur tasarımında bilinçli olarak düşük |
-| Bağıl aydınlatma (kenar) | 100.6 % | 98.9 % | vinyetleme yok |
-| Ana ışın açısı (kenar) / çıkış gözbebeği | 9.9° / görüntüden 47 mm önde | aynı | InGaAs FPA için sorunsuz |
-| Paraksiyel kromatik odak kayması 0,9→1,7 µm | -118 … +133 µm | -95 … +116 µm | blur büyüklüğü dalga boyuna göre dengelenmiştir |
+| Yanal renk 1,1–1,7 µm (0,9 µm dâhil) maks., kenar | 4.3 µm (11.6 µm) | 4,1 µm (14.9 µm) | yıldız rengine bağlı merkez kayması ≤ 0,16 px, doğrusal |
+| Distorsiyon (kalibre EFL'ye göre, maks.) | 0.58 % yastık | 0.54 % | düzgün; 3. derece radyal polinomla kalibre edilir |
+| MTF @ 25 lp/mm (Nyquist), T, eksen → kenar | 0.22 → 0.15 | 0.59 → 0.42 | blur tasarımında bilinçli olarak düşük |
+| Bağıl aydınlatma (kenar) | 98.5 % | 97.7 % | vinyetleme yok |
+| Ana ışın açısı (kenar) / çıkış gözbebeği | 10.5° / görüntüden 44 mm önde | aynı | InGaAs FPA için sorunsuz |
+| Paraksiyel kromatik odak kayması 0,9→1,7 µm | -121 … +152 µm | -98 … +134 µm | blur büyüklüğü dalga boyuna göre dengelenmiştir |
 
-**Odak boyunca davranış:** −75 … +25 µm odak kaymasında eksen RMS 16–20 µm, kenar 14–22 µm arasında kalır (bkz. `results/through_focus.png`).
+**Odak boyunca davranış:** −75 … +25 µm odak kaymasında eksen RMS 15–21 µm, kenar 16–21 µm arasında kalır (bkz. `results/through_focus.png`).
 
-**Dalga boyuna göre blur (eksen / kenar, RMS µm):** 0.9 µm: 15 / 22 · 1.1 µm: 17 / 20 · 1.3 µm: 17 / 18 · 1.55 µm: 19 / 17 · 1.7 µm: 21 / 19. PSF büyüklüğü yıldız rengine zayıf bağlıdır; blur salt odak kaydırmayla üretilseydi (±125 µm kromatik odak kayması nedeniyle) bu mümkün olmazdı.
+**Dalga boyuna göre blur (eksen / kenar, RMS µm):** 0.9 µm: 17 / 24 · 1.1 µm: 20 / 21 · 1.3 µm: 19 / 18 · 1.55 µm: 18 / 14 · 1.7 µm: 19 / 14. PSF büyüklüğü yıldız rengine zayıf bağlıdır; blur salt odak kaydırmayla üretilseydi (±125 µm kromatik odak kayması nedeniyle) bu mümkün olmazdı.
 
 ### Grafikler
 ![yerleşim](results/layout.png)
@@ -130,11 +131,11 @@ Yarı-açıklıklar vinyetlemesiz ışın izlerinden gelen serbest açıklıklar
 Keskin referans çözümün nokta diyagramı ve ölçütleri: `results/reference_sharp/`. Ayrıntılı rapor: `docs/tasarim_raporu.html` / `.pdf`.
 
 ### Yorum (yıldız izleyici bakışıyla)
-- **Neden 18 µm RMS?** Alt-piksel merkezleme için PSF'nin komşu piksellere yayılması gerekir; Gauss benzeri bir PSF için σ ≈ 0,6–0,7 px (FWHM ≈ 1,5 px), merkezleme hatası ile gök-fonu gürültüsü arasındaki bilinen optimumdur. Keskin referans tasarımda (enerjinin %86'i tek pikselde) piksel-fazına bağlı sistematik merkezleme hatası **0.14 px RMS** iken nihai tasarımda **0.035 px**'tir (≈ 4–5 kat iyileşme; kalan kısım alanla yavaş değişir ve kalibre edilebilir).
-- **Kırınım dâhil (Huygens PSF):** Huygens düzlem-dalgacık toplamıyla hesaplanan polikromatik kırınım PSF'si geometrik sonucu doğrular: RMS yarıçap 18.1–18.5 µm, 3×3 piksel enerjisi ≥ 94 %, kırınım PSF'siyle sistematik merkezleme hatası ≤ 0.044 px RMS (`results/huygens_psf.png`).
+- **Neden 18 µm RMS?** Alt-piksel merkezleme için PSF'nin komşu piksellere yayılması gerekir; Gauss benzeri bir PSF için σ ≈ 0,6–0,7 px (FWHM ≈ 1,5 px), merkezleme hatası ile gök-fonu gürültüsü arasındaki bilinen optimumdur. Keskin referans tasarımda (enerjinin %74'i tek pikselde) piksel-fazına bağlı sistematik merkezleme hatası **0.10 px RMS** iken nihai tasarımda **0.038 px**'tir (≈ 4–5 kat iyileşme; kalan kısım alanla yavaş değişir ve kalibre edilebilir).
+- **Kırınım dâhil (Huygens PSF):** Huygens düzlem-dalgacık toplamıyla hesaplanan polikromatik kırınım PSF'si geometrik sonucu doğrular: RMS yarıçap 18.1–18.3 µm, 3×3 piksel enerjisi ≥ 95 %, kırınım PSF'siyle sistematik merkezleme hatası ≤ 0.054 px RMS (`results/huygens_psf.png`).
 - **Blur nasıl üretildi?** Odak kaydırarak değil, optimizasyonla: her alan **ve her dalga boyu** için RMS yarıçapı 18 µm hedeflendi, PSF şekli için ⟨r⁴⟩/⟨r²⟩² = 2 (Gauss) hedefi eklendi ve aynı hedef ±50 µm odak kaymasında da istendi (odak/ısıya duyarsız blur). Sonuç, dengelenmiş küresel sapma + hafif odak kayması ile üretilen, alan boyunca tekdüze bir PSF'dir.
-- **Yanal renk** 1,1–1,7 µm'de ≤ 2.6 µm (kenarda, alanla doğrusal → kalibre edilebilir). 0,9 µm'de 8 µm; gündüz kullanımında bant geçiren filtre bu bölgeyi zaten dışlar.
-- **Distorsiyon** %0.28 yastık ve alanla düzgün → yıldız kataloğu eşleştirmesinde 3. derece radyal modelle kalıntı < 0,05 px beklenir.
+- **Yanal renk** 1,1–1,7 µm'de ≤ 4.3 µm (kenarda, alanla doğrusal → kalibre edilebilir). 0,9 µm'de 12 µm; gündüz kullanımında bant geçiren filtre bu bölgeyi zaten dışlar.
+- **Distorsiyon** %0.58 yastık ve alanla düzgün → yıldız kataloğu eşleştirmesinde 3. derece radyal modelle kalıntı < 0,05 px beklenir.
 - **Boresight kararlılığı:** 20 µm eleman kaçıklığı ≤ 17 µm (0,85 px) boresight kayması verir; mutlak boresight uçuşta yıldızlarla kalibre edildiği için önemli olan ısıl/mekanik kararlılıktır (bkz. §5).
 
 ## 5. Tolerans duyarlılığı
@@ -146,35 +147,35 @@ yarıçap/kalınlık hataları yalnızca odak düzeltmesi gerektirir, kaçıklı
 
 | Sapma | ΔRMS (µm) | Gerekli odak düzeltmesi (µm) | Boresight kayması (µm) |
 |---|---|---|---|
-| Element S12-S13 decentre 20 um | +1.04 | +0 | -9.7 |
-| Element S3-S5 decentre 20 um | -0.30 | +0 | +14.7 |
-| Element S10-S11 decentre 20 um | +0.22 | +0 | +16.6 |
-| Element S7-S9 decentre 20 um | -0.21 | +0 | -6.5 |
-| Element S1-S2 decentre 20 um | -0.13 | +0 | +4.9 |
-| S8 thickness +0.050 mm | -0.00 | -0 | +0.0 |
-| S9 thickness +0.050 mm | -0.00 | -20 | +0.0 |
-| S8 radius +0.1% | +0.00 | +1 | +0.0 |
-| S3 thickness +0.050 mm | -0.00 | -74 | +0.0 |
-| S2 radius +0.1% | -0.00 | -24 | +0.0 |
-| S7 thickness +0.050 mm | -0.00 | -0 | +0.0 |
-| S10 radius +0.1% | -0.00 | +26 | +0.0 |
+| Element S12-S13 decentre 20 um | +1.21 | +0 | -11.7 |
+| Element S1-S2 decentre 20 um | +0.32 | +0 | +11.2 |
+| Element S3-S5 decentre 20 um | +0.30 | +0 | +11.1 |
+| Element S10-S11 decentre 20 um | +0.12 | +0 | +13.1 |
+| Element S7-S9 decentre 20 um | +0.06 | +0 | -3.7 |
+| S4 thickness +0.050 mm | -0.00 | -84 | +0.0 |
+| S7 thickness +0.050 mm | -0.00 | -14 | +0.0 |
+| S8 thickness +0.050 mm | -0.00 | -14 | +0.0 |
+| S1 radius +0.1% | -0.00 | -16 | +0.0 |
+| S1 thickness +0.050 mm | -0.00 | -33 | +0.0 |
+| S2 radius +0.1% | -0.00 | -33 | +0.0 |
+| S4 radius +0.1% | -0.00 | -2 | +0.0 |
 
 Boresight sütunu, elemanın 20 µm merkez kaçıklığının eksen üzerindeki yıldız merkezini ne kadar
 kaydırdığını gösterir.
 
 ## 6. Mekanik / entegrasyon notları
-- Toplam uzunluk (S1 tepe → görüntü) 95.3 mm; flanştan öne uzunluk ≈ 77.8 mm; ön eleman çapı ~48 mm
-  (kamera gövdesi 55 × 55 mm ile uyumlu). Arka eleman serbest açıklığı 20,5 mm, arka tepe flanşın 1.24 mm önünde.
-- Odaklama: sonsuz için BFL = 18.767 mm (FFD 17,526 mm + 1.24 mm). ±0,3 mm odak ayarı (helikoid ya da shim)
+- Toplam uzunluk (S1 tepe → görüntü) 89.4 mm; flanştan öne uzunluk ≈ 71.8 mm; ön eleman çapı ~48 mm
+  (kamera gövdesi 55 × 55 mm ile uyumlu). Arka eleman serbest açıklığı 20,5 mm, arka tepe flanşın 1.19 mm önünde.
+- Odaklama: sonsuz için BFL = 18.715 mm (FFD 17,526 mm + 1.19 mm). ±0,3 mm odak ayarı (helikoid ya da shim)
   önerilir. Montajda odak, kolimatör/yıldız görüntüsünde 3×3 kare-içi enerji ≥ %95 ve 1×1 ≤ %40 (RMS ≈ 17–18 µm)
   olacak şekilde ayarlanır; en hassas hava aralığı S11 (E6–düzleştirici; +50 µm → −135 µm odak) bu ayarla telafi edilir.
   PSF büyüklüğü ±50 µm odak hatasına toleranslıdır.
 - Gündüz kullanım: derin, siyah anodize **güneş siperliği/baffle** (yarım görüş alanı 6,3°), iç yüzeylerde yiv,
   tüm yüzeylerde 0,9–1,7 µm geniş bant AR (< %0,5); gök fonunu bastırmak için **1,2–1,7 µm (veya 1,4–1,7 µm)
-  bant geçiren filtre**. Filtre C-mount içine konursa BFL filtre kalınlığının ~⅓'ü kadar uzar; 1.24 mm boşluk
+  bant geçiren filtre**. Filtre C-mount içine konursa BFL filtre kalınlığının ~⅓'ü kadar uzar; 1.19 mm boşluk
   ~3 mm filtre için yeterlidir (odak ayarı ile).
 - Merkezleme için sıkı hassasiyet gerekmez: 20 µm eleman kaçıklığı PSF tekdüzeliğini ≤ 0,5 µm bozar.
-- Kütle (cam, katalog yoğunlukları): ≈ 188 g; alüminyum hücre ve C-mount arayüzü ile ≈ 450 g.
+- Kütle (cam, katalog yoğunlukları): ≈ 179 g; alüminyum hücre ve C-mount arayüzü ile ≈ 450 g.
 
 ### Termal analiz (dört gövde malzemesi)
 `python -m swirlens.thermal` → `results/thermal.png`, `results/thermal.json`. Homojen sıcaklık, −40…+70 °C, sabit odak;
@@ -184,17 +185,15 @@ cam indisleri SCHOTT dn/dT modeli, cam ve gövde genleşmesi, alüminyum kamera 
 
 | Gövde | CTE (10⁻⁶/K) | Odak kayması −40 / +70 °C | RMS eksen −40/20/70 °C | RMS kenar −40/20/70 °C | 3×3 enerji min −40 / +70 °C | EFL ppm/K |
 |---|---|---|---|---|---|---|
-| Alüminyum 6061 | 23.6 | -60 / +55 µm | 29 / 18 / 17 µm | 33 / 18 / 14 µm | 58 % / 96 % | 42 |
-| Paslanmaz çelik 304 | 17.3 | -73 / +65 µm | 31 / 18 / 18 µm | 36 / 18 / 15 µm | 54 % / 93 % | 44 |
-| Titanyum Ti-6Al-4V | 8.6 | -91 / +81 µm | 35 / 18 / 20 µm | 40 / 18 / 17 µm | 48 % / 90 % | 46 |
-| Invar 36 | 1.3 | -106 / +93 µm | 38 / 18 / 22 µm | 44 / 18 / 19 µm | 45 % / 87 % | 48 |
+| Alüminyum 6061 | 23.6 | -65 / +59 µm | 31 / 18 / 15 µm | 31 / 18 / 18 µm | 62 % / 95 % | 44 |
+| Paslanmaz çelik 304 | 17.3 | -75 / +67 µm | 33 / 18 / 16 µm | 33 / 18 / 19 µm | 57 % / 93 % | 46 |
+| Titanyum Ti-6Al-4V | 8.6 | -88 / +78 µm | 36 / 18 / 17 µm | 36 / 18 / 20 µm | 51 % / 91 % | 48 |
+| Invar 36 | 1.3 | -100 / +87 µm | 39 / 18 / 19 µm | 39 / 18 / 22 µm | 47 % / 88 % | 50 |
 
-- Baskın etki camdır (N-PSK53A dn/dT < 0, N-KZFS4 dn/dT > 0 aynı yöne çalışır; yüksek eleman güçleri indis değişimini
-  EFL'ye ~4–5 kat büyütür). Gövde genleşmesi ters yönde ve zayıftır: **hiçbir metal tek başına atermal değildir**, alüminyum
-  en iyi, Invar en kötüdür. Atermal gövde katsayısı ≈ 55·10⁻⁶/K (polimer bölgesi).
-- Plaka ölçeği (EFL) 42–48 ppm/K sürüklenir (kenarda ±0,9 px / ±55 K) → sıcaklık indeksli kalibrasyon tablosu gerekir.
-- Çözümler: montajda soğuk tarafa odak ön-ofseti (Al gövde: -60 µm → en kötü RMS 25 µm),
-  ya da Al gövde ile seri ≈ 13 mm POM / ≈ 11 mm PTFE telafi ara parçası (pasif atermalizasyon), ya da aktif odak. Ayrıntı: `docs/tasarim_raporu.html` §14.
+- Atermal gövde katsayısı ≈ 69·10⁻⁶/K; en iyi metal gövde tablodaki en küçük odak kaymasını verendir.
+- Plaka ölçeği (EFL) 44–50 ppm/K sürüklenir (kenarda ±0,9 px / ±55 K) → sıcaklık indeksli kalibrasyon tablosu gerekir.
+- Çözümler: montajda soğuk tarafa odak ön-ofseti (Al gövde: -50 µm → en kötü RMS 25 µm),
+  ya da Al gövde ile seri ≈ 14 mm POM / ≈ 12 mm PTFE telafi ara parçası (pasif atermalizasyon), ya da aktif odak. Ayrıntı: `docs/tasarim_raporu.html` §14.
 
 ## 7. Kodun kullanımı
 

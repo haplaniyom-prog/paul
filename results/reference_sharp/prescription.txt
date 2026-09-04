@@ -1,20 +1,20 @@
-SWIR 75mm f/1.8 C-mount - sharp reference
-EFL 75.000 mm   F/1.80   EPD 41.67 mm   BFL 18.600 mm   toplam uzunluk (S1->görüntü) 96.67 mm
+SWIR 75mm f/1.8 C-mount - sharp reference (Rev. C glasses)
+EFL 75.000 mm   F/1.80   EPD 41.67 mm   BFL 18.817 mm   toplam uzunluk (S1->görüntü) 92.36 mm
 Dalga boyları (µm) / ağırlık: 0.9/0.3, 1.1/0.6, 1.3/1.0, 1.55/1.0, 1.7/0.8
 Alanlar (°): (0.0, 3.13, 4.4, 6.24)
 
 Yüzey  Yarıçap (mm)  Kalınlık (mm) Cam         Yarı-çap açıklık (mm)  Not
-    1       84.1921         6.1816 N-PSK53A                   23.685  E1 front
-    2      148.0156         0.5144 AIR                        22.876  
-    3       40.5837        15.0709 N-PSK53A                   21.897  E2 (cem.)
-    4      -37.9022         3.4323 N-KZFS4                    21.121  E3 (cem.)
-    5       78.1946         3.5235 AIR                        16.927  
-    6           düz         3.6799 AIR                        16.184  DURDURUCU (STOP)
-    7      -45.3705         2.3993 N-KZFS4                    15.818  E4 (cem.)
-    8       52.3232        12.6604 N-PSK53A                   16.052  E5 (cem.)
-    9      -72.6785         4.3890 AIR                        16.462  
-   10       58.5749         9.2148 N-PSK53A                   15.946  E6
-   11      -74.4439        13.0763 AIR                        15.166  
-   12      -27.1303         4.0000 N-SF6                      10.232  E7 field flattener
-   13     -102.0162        18.5260 AIR                        10.159  
+    1       87.9990         6.8451 N-PSK53A                   23.441  E1 front
+    2      157.6405         2.0545 AIR                        22.536  
+    3       36.7040        13.0000 N-PSK53A                   21.190  E2 (cem.)
+    4      -50.4686         3.0781 N-KZFS11                   20.484  E3 (cem.)
+    5       96.6359         2.4754 AIR                        17.259  
+    6           düz         3.3528 AIR                        16.816  DURDURUCU (STOP)
+    7      -54.0310         2.2657 N-KZFS11                   16.434  E4 (cem.)
+    8       49.8655        10.9314 N-PSK53A                   16.310  E5 (cem.)
+    9      -82.6406         4.3480 AIR                        16.381  
+   10       82.1197         9.4334 N-PSK53A                   15.585  E6
+   11      -63.7801        12.0544 AIR                        14.722  
+   12      -24.3032         3.8165 N-SF6                       9.977  E7 field flattener
+   13      -85.1388        18.7095 AIR                         9.981  
   IMG           düz                                            8.200  görüntü düzlemi (16.4 mm köşegen)

@@ -14,11 +14,14 @@ def sh(cmd):
     subprocess.run(cmd, shell=True, check=True)
 
 
-def main(src, th="0.25"):
+def main(src=None, th="0.25"):
+    """src: sharp design to polish from; None = analyse the existing results/design_final.json
+    and results/reference_sharp/design_sharp.json without re-optimising."""
     os.makedirs("results/reference_sharp", exist_ok=True)
-    sh(f"python -m swirlens.polish {src} results/reference_sharp/design_sharp.json lc=3 th={th} efl_th=0.05 thick=0.02 iters=400")
-    sh(f"python -m swirlens.polish results/reference_sharp/design_sharp.json results/design_final.json "
-       f"lc=3 target=18 shape=0.1 tf=50 th={th} efl_th=0.05 thick=0.02 iters=400")
+    if src:
+        sh(f"python -m swirlens.polish {src} results/reference_sharp/design_sharp.json lc=4 th={th} efl_th=0.05 thick=0.003 iters=400")
+        sh(f"python -m swirlens.polish results/reference_sharp/design_sharp.json results/design_final.json "
+           f"lc=4 target=18 shape=0.1 tf=50 th={th} efl_th=0.05 thick=0.003 iters=600")
     sh("python -m swirlens.run_analysis results/design_final.json results --refocus-restore")
     sh("python -m swirlens.run_analysis results/reference_sharp/design_sharp.json results/reference_sharp")
     for f in ("swir_75mm_f18_cmount.zmx", "prescription.csv", "layout.png", "through_focus.png", "rms_vs_field.png", "mtf.png",
@@ -36,4 +39,4 @@ def main(src, th="0.25"):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:3])
+    main(*(sys.argv[1:3] if len(sys.argv) > 1 else [None]))
