@@ -1,20 +1,20 @@
 SWIR 75mm f/1.8 C-mount star tracker (Wildcat 640)
-EFL 75.000 mm   F/1.80   EPD 41.67 mm   BFL 18.707 mm   toplam uzunluk (S1->görüntü) 96.08 mm
+EFL 75.000 mm   F/1.80   EPD 41.67 mm   BFL 18.767 mm   toplam uzunluk (S1->görüntü) 95.33 mm
 Dalga boyları (µm) / ağırlık: 0.9/0.3, 1.1/0.6, 1.3/1.0, 1.55/1.0, 1.7/0.8
 Alanlar (°): (0.0, 3.13, 4.4, 6.24)
 
 Yüzey  Yarıçap (mm)  Kalınlık (mm) Cam         Yarı-çap açıklık (mm)  Not
-    1       78.8907         6.4516 N-PSK53A                   23.674  E1 front
-    2      144.7114         0.5000 AIR                        22.818  
-    3       39.6592        14.7230 N-PSK53A                   21.774  E2 (cem.)
-    4      -39.5405         2.5938 N-KZFS4                    20.988  E3 (cem.)
-    5       71.8958         7.1301 AIR                        17.044  
-    6           düz         3.1374 AIR                        14.843  DURDURUCU (STOP)
-    7      -46.0356         2.9368 N-KZFS4                    14.629  E4 (cem.)
-    8       40.6134        12.7450 N-PSK53A                   14.468  E5 (cem.)
-    9      -79.2578         4.3670 AIR                        14.851  
-   10       52.4277         7.5507 N-PSK53A                   14.505  E6
-   11      -72.3422        11.4161 AIR                        13.947  
-   12      -27.6687         3.8778 N-SF6                       9.981  E7 field flattener
-   13     -115.2657        18.6482 AIR                         9.916  
+    1       78.6901         6.2033 N-PSK53A                   23.393  E1 front
+    2      130.5318         0.5005 AIR                        22.545  
+    3       38.0925        14.7948 N-PSK53A                   21.556  E2 (cem.)
+    4      -39.3940         2.3932 N-KZFS4                    20.761  E3 (cem.)
+    5       68.9151         6.2905 AIR                        16.894  
+    6           düz         3.1004 AIR                        15.139  DURDURUCU (STOP)
+    7      -48.4138         2.5893 N-KZFS4                    14.926  E4 (cem.)
+    8       56.4485        12.2782 N-PSK53A                   14.618  E5 (cem.)
+    9      -81.8148         4.3238 AIR                        14.936  
+   10       55.5255         8.0748 N-PSK53A                   14.541  E6
+   11      -83.5148        12.2502 AIR                        13.877  
+   12      -27.4631         3.9988 N-SF6                       9.979  E7 field flattener
+   13      -81.8267        18.5272 AIR                         9.978  
   IMG           düz                                            8.200  görüntü düzlemi (16.4 mm köşegen)

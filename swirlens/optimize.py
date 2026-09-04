@@ -107,7 +107,15 @@ def bounds(lens, layout):
 
 # ---------------------------------------------------------------- merit
 class Merit:
-    def __init__(self, lens, layout, npup=11, field_w=(1.0, 1.0, 1.0, 0.8), lc_weight=0.0, ac_weight=0.0):
+    def __init__(self, lens, layout, npup=11, field_w=(1.0, 1.0, 1.0, 0.8), lc_weight=0.0, ac_weight=0.0, target_rms=None, shape_weight=0.0, tf_offsets=(), tf_weight=0.7):
+        # tf_offsets (mm): also drive the blur to target_rms at these defocus
+        # positions (focus-insensitive PSF); tf_weight scales those residuals
+        self.tf_offsets = tuple(tf_offsets); self.tf_weight = tf_weight
+        # shape_weight: penalise deviation of <r^4>/<r^2>^2 from 2 (Gaussian-like PSF)
+        self.shape_weight = shape_weight
+        # target_rms (mm): if set, drive the RMS spot radius of every field AND
+        # wavelength to this value (deliberate, uniform blur for centroiding)
+        self.target_rms = target_rms
         self.ac_weight = ac_weight  # weight on paraxial focal shift vs wavelength (axial colour)
         self.lc_weight = lc_weight  # weight on per-wavelength centroid shift (lateral colour)
         self.lens = lens
@@ -152,7 +160,11 @@ class Merit:
         iref = list(L.wavelengths).index(L.ref_wl)
         chief_angle = float(np.degrees(np.arccos(np.clip(Dimg[:, iref, ic, 2], -1, 1))).max())
         WLr = np.array(L.weights)[None, :, None] * np.ones((nf, nw, nr))
-        for fi, wf in enumerate(self.field_w):
+        Pimg0 = Pimg
+        for dz, wdz in [(0.0, 1.0)] + [(d, self.tf_weight) for d in (self.tf_offsets if self.target_rms else ())]:
+          Pimg = Pimg0 + dz * Dimg / Dimg[..., 2:3]
+          for fi, wf0 in enumerate(self.field_w):
+            wf = wf0 * wdz
             xs = Pimg[fi, :, :, 0].ravel(); ys = Pimg[fi, :, :, 1].ravel()
             ok = OK[fi].ravel(); ws = WLr[fi].ravel()
             wsum = ws.sum()
@@ -164,14 +176,37 @@ class Merit:
             sc = np.sqrt(ws * wf / wsum)
             ex = np.where(ok, (xs - xc), 0.5) * sc
             ey = np.where(ok, (ys - yc), 0.5) * sc
-            res += [ex, ey]
+            if self.target_rms is None:
+                res += [ex, ey]
+            elif dz == 0.0 or True:
+                # per-wavelength RMS radius about its own centroid -> target
+                rr = []
+                for wi in range(nw):
+                    okw = OK[fi, wi]
+                    xw = Pimg[fi, wi, :, 0]; yw = Pimg[fi, wi, :, 1]
+                    cnt = max(okw.sum(), 1)
+                    xcw = np.where(okw, xw, 0).sum() / cnt; ycw = np.where(okw, yw, 0).sum() / cnt
+                    r2 = np.where(okw, (xw - xcw) ** 2 + (yw - ycw) ** 2, 0.25).sum() / cnt
+                    rr.append(np.sqrt(r2))
+                rr = np.array(rr)
+                res.append(3.0 * np.sqrt(wf * np.array(L.weights) / np.sum(L.weights)) * (rr - self.target_rms))
+                if self.shape_weight > 0:
+                    r2 = np.where(ok, (xs - xc) ** 2 + (ys - yc) ** 2, 0.0)
+                    m2 = (wok * r2).sum() / max(wok.sum(), 1e-9)
+                    m4 = (wok * r2 * r2).sum() / max(wok.sum(), 1e-9)
+                    kurt = m4 / max(m2 * m2, 1e-12)
+                    res.append(np.array([self.shape_weight * np.sqrt(wf) * (kurt - 2.0)]))
+                    if return_info and dz == 0.0:
+                        info[f"kurt_field{fi}"] = round(float(kurt), 2)
+                if return_info and dz == 0.0:
+                    info[f"rms_lambda_field{fi}"] = (rr * 1000).round(1).tolist()
             if self.lc_weight > 0:
                 # lateral colour: centroid of each wavelength vs polychromatic centroid
                 Xw = Pimg[fi, :, :, 1]; OKw = OK[fi]
                 cnt = np.maximum(OKw.sum(1), 1)
                 yc_l = np.where(OKw, Xw, 0.0).sum(1) / cnt
                 res.append(self.lc_weight * (yc_l - yc) * np.sqrt(np.array(L.weights) / np.sum(L.weights)))
-            if return_info:
+            if return_info and dz == 0.0:
                 info[f"rms_field{fi}"] = float(np.sqrt(((ex ** 2 + ey ** 2).sum()) / wf) * 1000)  # um
         # ---- constraints
         efl, bfl = par["efl"], par["bfl"]

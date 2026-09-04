@@ -1,7 +1,8 @@
-__pycache__/
 *.pyc
-results/search/
-results/refine/
+__pycache__/
 results/*_log.txt
-results/stage_*.json
 results/design_lak9_sf6.json
+results/refine/
+results/run_log.txt
+results/search/
+results/stage_*.json

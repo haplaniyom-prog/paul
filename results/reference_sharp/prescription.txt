@@ -1,0 +1,20 @@
+SWIR 75mm f/1.8 C-mount star tracker (Wildcat 640)
+EFL 75.000 mm   F/1.80   EPD 41.67 mm   BFL 18.707 mm   toplam uzunluk (S1->görüntü) 96.08 mm
+Dalga boyları (µm) / ağırlık: 0.9/0.3, 1.1/0.6, 1.3/1.0, 1.55/1.0, 1.7/0.8
+Alanlar (°): (0.0, 3.13, 4.4, 6.24)
+
+Yüzey  Yarıçap (mm)  Kalınlık (mm) Cam         Yarı-çap açıklık (mm)  Not
+    1       78.8907         6.4516 N-PSK53A                   23.674  E1 front
+    2      144.7114         0.5000 AIR                        22.818  
+    3       39.6592        14.7230 N-PSK53A                   21.774  E2 (cem.)
+    4      -39.5405         2.5938 N-KZFS4                    20.988  E3 (cem.)
+    5       71.8958         7.1301 AIR                        17.044  
+    6           düz         3.1374 AIR                        14.843  DURDURUCU (STOP)
+    7      -46.0356         2.9368 N-KZFS4                    14.629  E4 (cem.)
+    8       40.6134        12.7450 N-PSK53A                   14.468  E5 (cem.)
+    9      -79.2578         4.3670 AIR                        14.851  
+   10       52.4277         7.5507 N-PSK53A                   14.505  E6
+   11      -72.3422        11.4161 AIR                        13.947  
+   12      -27.6687         3.8778 N-SF6                       9.981  E7 field flattener
+   13     -115.2657        18.6482 AIR                         9.916  
+  IMG           düz                                            8.200  görüntü düzlemi (16.4 mm köşegen)

@@ -219,7 +219,42 @@ def refocus(lens, decenter=None, span=0.4):
     return L, r.x
 
 
-def sensitivity(lens, dR_rel=0.001, dt=0.05, dec=0.02):
+def refocus_restore(lens, target, span=0.3, ngrid=61):
+    """Re-focus so that the field-averaged RMS spot returns to `target`
+    (the deliberately blurred nominal value), choosing the focus position
+    closest to nominal.  Returns (lens, shift_mm)."""
+    from scipy.optimize import brentq
+    L = lens.copy(); t0 = L.surfaces[-1].t
+
+    def g(d):
+        L.surfaces[-1].t = t0 + d
+        return _avg_rms(L) - target
+    ds = np.linspace(-span, span, ngrid)
+    gs = np.array([g(d) for d in ds])
+    best = None
+    for i in range(ngrid - 1):
+        if gs[i] == 0 or gs[i] * gs[i + 1] < 0:
+            root = brentq(g, ds[i], ds[i + 1], xtol=1e-4)
+            if best is None or abs(root) < abs(best):
+                best = root
+    if best is None:                      # cannot restore: take the minimum
+        best = ds[int(np.argmin(np.abs(gs)))]
+    L.surfaces[-1].t = t0 + best
+    return L, best
+
+
+def _compensate(lens, mode, base):
+    if mode == "restore":
+        return refocus_restore(lens, base)
+    if mode:
+        return refocus(lens)
+    return lens, 0.0
+
+
+def sensitivity(lens, dR_rel=0.001, dt=0.05, dec=0.02, do_refocus=True):
+    """do_refocus: True (minimise RMS), False (no compensation) or "restore"
+    (re-focus to the nominal blurred RMS - the right choice for a
+    deliberately defocused star-tracker PSF)."""
     """Change of field-averaged polychromatic RMS spot (um) after refocusing
     (focus is the compensator), the required refocus (um) and the axial
     centroid (boresight) shift, for individual perturbations."""
@@ -230,11 +265,11 @@ def sensitivity(lens, dR_rel=0.001, dt=0.05, dec=0.02):
             continue
         if s.c != 0:
             L = lens.copy(); L.surfaces[k].c = s.c / (1 + dR_rel)
-            L2, d = refocus(L)
+            L2, d = _compensate(L, do_refocus, base)
             rows.append((f"S{k+1} radius +{dR_rel*100:.1f}%", _avg_rms(L2) - base, d * 1000, 0.0))
         if k < len(lens.surfaces) - 1:
             L = lens.copy(); L.surfaces[k].t = s.t + dt
-            L2, d = refocus(L)
+            L2, d = _compensate(L, do_refocus, base)
             rows.append((f"S{k+1} thickness +{dt:.3f} mm", _avg_rms(L2) - base, d * 1000, 0.0))
     k = 0
     while k < len(lens.surfaces):
@@ -248,6 +283,9 @@ def sensitivity(lens, dR_rel=0.001, dt=0.05, dec=0.02):
             c_ax = poly_spot(lens, 0.0, 15, decenter=d)[3]
             rows.append((f"Element S{k+1}-S{j+1} decentre {dec*1000:.0f} um",
                          _avg_rms(lens, decenter=d) - base, 0.0, c_ax[1] * 1000))
+            # field non-uniformity of the blur caused by the decentre
+            rows[-1] = rows[-1][:1] + (float(np.ptp([poly_spot(lens, f, 15, decenter=d)[4] for f in lens.fields_deg]) * 1000
+                                       - np.ptp([poly_spot(lens, f, 15)[4] for f in lens.fields_deg]) * 1000),) + rows[-1][2:]
             k = j + 1
         else:
             k += 1
@@ -470,3 +508,75 @@ def export_csv(lens, path):
         for k, s in enumerate(lens.surfaces):
             R = "inf" if s.c == 0 else f"{s.R:.4f}"
             f.write(f"{k+1},{R},{s.t:.4f},{s.glass},{s.sd:.3f},{'STOP' if s.stop else s.comment}\n")
+
+
+# ------------------------------------------------- star-tracker centroiding
+def ensquared_vs_field(lens, nfield=9, n=41):
+    fs = np.linspace(0, lens.fields_deg[-1], nfield)
+    return fs, np.array([ensquared(lens, f, n=n) for f in fs])
+
+
+def centroid_bias(lens, field, n=61, nphase=8, window=5, decenter=None):
+    """Systematic (pixel-phase) centroiding error of the polychromatic
+    geometric PSF sampled on the 20 um pixel grid.
+
+    The spot is shifted over a grid of sub-pixel phases; for each phase the
+    image is binned into pixels, the centre of mass over a `window` x `window`
+    pixel box around the brightest pixel is computed, and the error relative
+    to the true centroid is recorded.  Returns (rms_err_px, max_err_px)."""
+    pts, ws, _, c, _ = poly_spot(lens, field, n, decenter)
+    rel = (pts - c) / PIX                     # spot in pixel units, centred
+    errs = []
+    ph = (np.arange(nphase) + 0.5) / nphase - 0.5
+    half = (window - 1) / 2
+    for dx in ph:
+        for dy in ph:
+            x = rel[:, 0] + dx; y = rel[:, 1] + dy      # true centroid at (dx, dy)
+            ix = np.floor(x + 0.5).astype(int); iy = np.floor(y + 0.5).astype(int)
+            img = {}
+            for a, b, w in zip(ix, iy, ws):
+                img[(a, b)] = img.get((a, b), 0.0) + w
+            (bx, by) = max(img, key=img.get)
+            tot = mx = my = 0.0
+            for (a, b), w in img.items():
+                if abs(a - bx) <= half and abs(b - by) <= half:
+                    tot += w; mx += w * a; my += w * b
+            errs.append((mx / tot - dx, my / tot - dy))
+    errs = np.array(errs)
+    e = np.hypot(errs[:, 0], errs[:, 1])
+    return float(np.sqrt((e ** 2).mean())), float(e.max())
+
+
+def psf_profile(lens, field, n=61, nbins=30, rmax=0.05):
+    """Radial encircled-energy curve of the polychromatic geometric spot."""
+    pts, ws, _, c, _ = poly_spot(lens, field, n)
+    r = np.hypot(pts[:, 0] - c[0], pts[:, 1] - c[1])
+    edges = np.linspace(0, rmax, nbins + 1)
+    ee = np.array([ws[r <= e].sum() / ws.sum() for e in edges])
+    return edges, ee
+
+
+def plot_startracker(lens, path):
+    fs, ee = ensquared_vs_field(lens)
+    fig, axs = plt.subplots(1, 3, figsize=(15, 4.2))
+    for i, lab in enumerate(("1×1 piksel", "2×2 piksel", "3×3 piksel")):
+        axs[0].plot(fs, ee[:, i] * 100, marker="o", label=lab)
+    axs[0].set_xlabel("alan (°)"); axs[0].set_ylabel("kare-içi enerji (%)"); axs[0].set_ylim(0, 105)
+    axs[0].grid(alpha=0.3); axs[0].legend(); axs[0].set_title("Kare-içi enerji (nokta merkezine ortalanmış)")
+    cols = ["k", "tab:blue", "tab:green", "tab:red"]
+    for c, f in zip(cols, lens.fields_deg):
+        edges, prof = psf_profile(lens, f)
+        axs[1].plot(edges * 1000, prof * 100, color=c, label=f"{f:.2f}°")
+    axs[1].axvline(10, color="gray", ls=":"); axs[1].axvline(30, color="gray", ls=":")
+    axs[1].text(10.5, 5, "½ px", fontsize=7); axs[1].text(30.5, 5, "1½ px", fontsize=7)
+    axs[1].set_xlabel("yarıçap (µm)"); axs[1].set_ylabel("çevrelenen enerji (%)"); axs[1].grid(alpha=0.3)
+    axs[1].legend(); axs[1].set_title("Çevrelenen enerji (polikromatik)")
+    fsb = np.linspace(0, lens.fields_deg[-1], 5)
+    cb = np.array([centroid_bias(lens, f) for f in fsb])
+    axs[2].plot(fsb, cb[:, 0], marker="o", label="RMS")
+    axs[2].plot(fsb, cb[:, 1], marker="s", label="maks.")
+    axs[2].set_xlabel("alan (°)"); axs[2].set_ylabel("sistematik merkezleme hatası (piksel)")
+    axs[2].set_ylim(0, None); axs[2].grid(alpha=0.3); axs[2].legend()
+    axs[2].set_title("Piksel-fazı merkezleme hatası (5×5 CoM, gürültüsüz)")
+    fig.tight_layout(); fig.savefig(path, dpi=160); plt.close(fig)
+    return fs, ee, fsb, cb
