@@ -26,6 +26,27 @@ def main(design, outdir, do_refocus=True):
     dz, tf_rms, tf_mtf = A.plot_through_focus(L, os.path.join(outdir, "through_focus.png"))
     ri_f, ri = A.relative_illumination(L)
     ens = {f: A.ensquared(L, f) for f in L.fields_deg}
+    # ---- extra metrics / plots used by the report
+    wf = A.plot_wavefront(L, os.path.join(outdir, "wavefront.png"))
+    A.plot_psf_pixels(L, os.path.join(outdir, "psf_pixels.png"))
+    ri_f2, ri2, ch2 = A.plot_illum_chief(L, os.path.join(outdir, "illumination_chief.png"))
+    lam_rms = {}
+    for lam in L.wavelengths:
+        P0 = A.spot(L, 0.0, lam, 21); P1 = A.spot(L, L.fields_deg[-1], lam, 21)
+        lam_rms[str(lam)] = [float(np.sqrt(((P0 - P0.mean(0)) ** 2).sum(1).mean()) * 1000),
+                             float(np.sqrt(((P1 - P1.mean(0)) ** 2).sum(1).mean()) * 1000)]
+    lcf, lcv = A.lateral_color(L, 7, 15)
+    cl, cv = A.chromatic_focal_shift(L, 9)
+    dfs, _, _, ddist, dych = A.field_curves(L, 7)
+    iref = list(L.wavelengths).index(L.ref_wl)
+    lc_1p1 = float(np.abs(np.delete(fc["lat"], [0], axis=1)).max()) if L.wavelengths[0] < 1.0 else float(np.abs(fc["lat"]).max())
+    json.dump(dict(wavefront_rms_pv_waves={f"{k:.2f}": list(v) for k, v in wf.items()},
+                   ri=[float(v) for v in ri2], chief=[float(v) for v in ch2], fields=[float(v) for v in ri_f2],
+                   rms_lambda=lam_rms,
+                   lateral_color=dict(wavelengths=list(L.wavelengths), fields=[float(v) for v in lcf], um=lcv.tolist()),
+                   chromatic_focal_shift=dict(lam=[float(v) for v in cl], um=[float(v) for v in cv]),
+                   distortion=dict(fields=[float(v) for v in dfs], y=[float(v) for v in dych], pct=[float(v) for v in ddist])),
+              open(os.path.join(outdir, "extra_metrics.json"), "w"), indent=1)
     base, rows = A.sensitivity(L, do_refocus=do_refocus)
     ee_f, ee, cb_f, cb = A.plot_startracker(L, os.path.join(outdir, "startracker_metrics.png"))
     z = L.vertex_z()
@@ -39,6 +60,7 @@ def main(design, outdir, do_refocus=True):
         distortion_pct_max=float(np.abs(fc["dist"]).max()),
         field_curv_um=dict(T=[float(v * 1000) for v in fc["zt"]], S=[float(v * 1000) for v in fc["zs"]]),
         lateral_color_um_max=float(np.abs(fc["lat"]).max()),
+        lateral_color_1p1_1p7_um=lc_1p1,
         chromatic_focal_shift_um=dict(min=float(fc["cfs"].min()), max=float(fc["cfs"].max())),
         relative_illumination_edge=float(ri[-1]),
         ensquared_1px_2px_3px={f"{f:.2f}": [float(v) for v in e] for f, e in ens.items()},

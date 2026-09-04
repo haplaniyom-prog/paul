@@ -100,7 +100,20 @@ class Lens:
                     fno=efl / self.epd, y_img=y_img)
 
     def stop_semi_diameter(self):
+        """Stop semi-diameter such that the *real* axial marginal ray launched
+        at height epd/2 in the entrance pupil just passes the stop edge
+        (i.e. epd is the true entrance-beam diameter, as in Zemax with ray
+        aiming on).  Falls back to the paraxial value if the ray fails."""
         p = self.paraxial()
+        z0 = p["ep_z"]
+        P = np.array([[0.0, 0.5 * self.epd, z0]]); D = np.array([[0.0, 0.0, 1.0]])
+        k = self.stop_index
+        try:
+            r = self._trace(P, D, np.array([self.ref_wl]), upto=k)
+            if r["ok"][0]:
+                return float(r["hits"][k][0, 1])
+        except Exception:
+            pass
         return 0.5 * self.epd * p["stop_mag"]
 
     # --------------------------------------------------------------- tracing
@@ -116,7 +129,7 @@ class Lens:
         # start plane: entrance pupil plane, expressed relative to vertex 1
         z0 = par["ep_z"]
         off_y, scale = 0.0, 1.0
-        if aim and field_deg != 0.0:
+        if aim:   # also on axis: the real marginal ray must hit the stop edge
             off_y, scale = self._aim(field_deg, lam)
         x = px * r * scale
         y = py * r * scale + off_y

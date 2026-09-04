@@ -6,3 +6,4 @@ results/refine/
 results/run_log.txt
 results/search/
 results/stage_*.json
+results/tmp/

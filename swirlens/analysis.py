@@ -578,3 +578,59 @@ def plot_startracker(lens, path):
     axs[2].set_title("Piksel-fazı merkezleme hatası (5×5 CoM, gürültüsüz)")
     fig.tight_layout(); fig.savefig(path, dpi=160); plt.close(fig)
     return fs, ee, fsb, cb
+
+
+# ------------------------------------------------------------ extra plots
+def plot_wavefront(lens, path, lam=None):
+    """OPD maps (waves) for each field at the reference wavelength."""
+    lam = lens.ref_wl if lam is None else lam
+    fig, axs = plt.subplots(1, len(lens.fields_deg), figsize=(4 * len(lens.fields_deg), 3.8))
+    stats = {}
+    for ax, f in zip(axs, lens.fields_deg):
+        v, g = opd_grid(lens, f, lam, n=97)
+        g = g - np.nanmean(g)
+        # remove tilt (centroid reference) for a cleaner map
+        rms = np.sqrt(np.nanmean(g ** 2)); pv = np.nanmax(g) - np.nanmin(g)
+        stats[f] = (float(rms), float(pv))
+        im = ax.imshow(g, extent=[-1, 1, -1, 1], origin="lower", cmap="RdBu_r")
+        ax.set_title(f"alan {f:.2f}°\nRMS {rms:.2f} λ, P-V {pv:.2f} λ"); ax.set_xticks([]); ax.set_yticks([])
+        plt.colorbar(im, ax=ax, fraction=0.046)
+    fig.suptitle(f"Dalga cephesi hatası (OPD, λ = {lam} µm, çıkış gözbebeği)")
+    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+    return stats
+
+
+def plot_psf_pixels(lens, path, n=81, box=5):
+    """Polychromatic geometric PSF binned on the 20 um pixel grid (spot
+    centred on a pixel centre and on a pixel corner)."""
+    fig, axs = plt.subplots(2, len(lens.fields_deg), figsize=(3.4 * len(lens.fields_deg), 6.8))
+    for j, f in enumerate(lens.fields_deg):
+        pts, ws, _, c, _ = poly_spot(lens, f, n)
+        rel = (pts - c) / PIX
+        for i, (ph, lab) in enumerate(((0.0, "piksel merkezinde"), (0.5, "piksel köşesinde"))):
+            H, xe, ye = np.histogram2d(rel[:, 0] + ph, rel[:, 1] + ph, bins=box,
+                                       range=[[-box / 2, box / 2]] * 2, weights=ws)
+            H /= ws.sum()
+            ax = axs[i, j]
+            im = ax.imshow(H.T * 100, origin="lower", cmap="magma", extent=[-box / 2, box / 2] * 2, vmin=0, vmax=40)
+            for (a, b), val in np.ndenumerate(H):
+                if val > 0.01:
+                    ax.text(xe[a] + 0.5, ye[b] + 0.5, f"{val*100:.0f}", ha="center", va="center",
+                            color="w" if val < 0.25 else "k", fontsize=7)
+            ax.set_xticks(range(-box // 2, box // 2 + 1)); ax.set_yticks(range(-box // 2, box // 2 + 1))
+            ax.grid(color="gray", lw=0.4, alpha=0.5)
+            ax.set_title(f"alan {f:.2f}° — yıldız {lab}", fontsize=9)
+    fig.suptitle("Piksel ızgarası üzerinde polikromatik PSF (piksel başına enerji, %)")
+    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+
+
+def plot_illum_chief(lens, path):
+    fs, ri = relative_illumination(lens)
+    ch = [float(np.degrees(np.arccos(lens.trace_field([0.0], [0.0], f, lens.ref_wl)["D"][0, 2]))) for f in fs]
+    fig, axs = plt.subplots(1, 2, figsize=(9, 3.6))
+    axs[0].plot(fs, ri * 100, marker="o"); axs[0].set_ylim(80, 102); axs[0].set_xlabel("alan (°)")
+    axs[0].set_ylabel("bağıl aydınlatma (%)"); axs[0].grid(alpha=0.3); axs[0].set_title("Bağıl aydınlatma")
+    axs[1].plot(fs, ch, marker="o"); axs[1].set_xlabel("alan (°)"); axs[1].set_ylabel("ana ışın açısı (°)")
+    axs[1].grid(alpha=0.3); axs[1].set_title("Görüntü düzleminde ana ışın açısı")
+    fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
+    return fs, ri, ch
