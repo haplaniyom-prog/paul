@@ -1,0 +1,20 @@
+SWIR 75mm f/1.8 C-mount star tracker
+EFL 75.000 mm   F/2.20   EPD 34.09 mm   BFL 20.639 mm   toplam uzunluk (S1->görüntü) 106.24 mm
+Dalga boyları (µm) / ağırlık: 0.9/0.3, 1.1/0.6, 1.3/1.0, 1.55/1.0, 1.7/0.8
+Alanlar (°): (0.0, 3.13, 4.4, 6.24)
+
+Yüzey  Yarıçap (mm)  Kalınlık (mm) Cam         Yarı-çap açıklık (mm)  Not
+    1       84.6450         8.0069 N-PSK53A                   20.797  E1 front
+    2      452.9173         1.8376 AIR                        19.845  
+    3       56.5301        12.1903 N-PSK53A                   18.751  E2 (cem.)
+    4      -56.6644         4.8600 N-KZFS4                    16.963  E3 (cem.)
+    5       77.0605         7.4360 AIR                        14.455  
+    6           düz         6.3267 AIR                        12.387  DURDURUCU (STOP)
+    7      -52.0576         5.2086 N-KZFS4                    12.104  E4 (cem.)
+    8       50.6746        13.1620 N-PSK53A                   12.693  E5 (cem.)
+    9      -61.9847         0.5547 AIR                        13.391  
+   10       75.9335         6.9957 N-PSK53A                   13.321  E6
+   11     -352.9615        17.1393 AIR                        12.872  
+   12     -870.8724         2.3646 N-SF6                      10.229  E7 field flattener
+   13      206.8682        20.1614 AIR                        10.015  
+  IMG           düz                                            8.200  görüntü düzlemi (16.4 mm köşegen)

@@ -196,7 +196,17 @@ cam indisleri SCHOTT dn/dT modeli, cam ve gövde genleşmesi, alüminyum kamera 
 - Çözümler: montajda soğuk tarafa odak ön-ofseti (Al gövde: -60 µm → en kötü RMS 25 µm),
   ya da Al gövde ile seri ≈ 13 mm POM / ≈ 11 mm PTFE telafi ara parçası (pasif atermalizasyon), ya da aktif odak. Ayrıntı: `docs/tasarim_raporu.html` §14.
 
-## 7. Kodun kullanımı
+## 7. Zemax ile adım adım karşılaştırma
+
+`docs/zemax_adim_adim.md`: aynı tasarımı Zemax OpticStudio'da elle kurmak için adım adım kılavuz
+(System Explorer ayarları, başlangıç reçetesi, değişkenler, merit fonksiyonu operandları ve ağırlıkları,
+f/2.8 → 2.2 → 1.8 kademeleri, yanal renk terimi, 18 µm hedef-RMS / Gauss şekil / ±50 µm odak aşaması,
+kaydedilecek analizler). Aynı zincir `python -m swirlens.walkthrough` ile bu depoda koşturuldu;
+her aşamanın reçetesi, `.zmx` dosyası, nokta diyagramı ve ölçütleri `results/zemax_karsilastirma/<aşama>/`
+altında, karşılaştırma tablosu (Zemax sütunu boş) `results/zemax_karsilastirma/karsilastirma.md`'de
+(`python -m swirlens.compare_table` üretir).
+
+## 8. Kodun kullanımı
 
 ```bash
 pip install -r requirements.txt
@@ -222,7 +232,7 @@ distorsiyon, yanal renk, kromatik odak kayması, kare-içi enerji, bağıl aydı
 MTF, kare-içi/çevrelenen enerji, piksel-fazı merkezleme hatası simülasyonu, tolerans duyarlılığı
 (odak telafili), Zemax/CSV dışa aktarım.
 
-## 8. Sınırlamalar
+## 9. Sınırlamalar
 - Merkezleme hatası simülasyonu geometrik PSF ile, gürültüsüz ve 5×5 ağırlık-merkezi algoritmasıyla
   yapılmıştır; kırınım (Airy yarıçapı ~3,5 µm) ve piksel MTF'si gerçek PSF'yi biraz daha yumuşatır,
   yani gerçek sistematik hata burada verilenden küçük olmalıdır. Farklı merkezleme algoritmaları
