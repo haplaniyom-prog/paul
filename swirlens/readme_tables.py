@@ -29,6 +29,10 @@ def build():
     rms_tf = np.array(tf["rms_um"]); dz = np.array(tf["dz_um"])
     sel = (dz >= -75) & (dz <= 25)
     lam_rms = json.load(open("results/extra_metrics.json")).get("rms_lambda", {})
+    hu = json.load(open("results/extra_metrics.json")).get("huygens", {})
+    hu_line = ("Huygens düzlem-dalgacık toplamıyla hesaplanan polikromatik kırınım PSF'si geometrik sonucu doğrular: RMS yarıçap "
+               + "–".join(f"{min(v['rms_um'] for v in hu.values()):.1f}".split()) + f"–{max(v['rms_um'] for v in hu.values()):.1f} µm, 3×3 piksel enerjisi ≥ {min(v['ee_3px'] for v in hu.values())*100:.0f} %, "
+               f"kırınım PSF'siyle sistematik merkezleme hatası ≤ {max(v['centroid_bias_rms_px'] for v in hu.values()):.3f} px RMS (`results/huygens_psf.png`).") if hu else ""
     lam_txt = " · ".join(f"{l} µm: {v[0]:.0f} / {v[1]:.0f}" for l, v in lam_rms.items()) if lam_rms else ""
     return f"""## 3. Reçete
 
@@ -67,6 +71,8 @@ Yarı-açıklıklar vinyetlemesiz ışın izlerinden gelen serbest açıklıklar
 ![yerleşim](results/layout.png)
 ![nokta](results/spots.png)
 ![piksel ızgarasında PSF](results/psf_pixels.png)
+![Huygens PSF](results/huygens_psf.png)
+![Huygens PSF kesitleri](results/huygens_profiles.png)
 ![yıldız izleyici ölçütleri](results/startracker_metrics.png)
 ![odak](results/through_focus.png)
 ![alan-renk](results/field_curv_dist_color.png)
@@ -80,7 +86,8 @@ Yarı-açıklıklar vinyetlemesiz ışın izlerinden gelen serbest açıklıklar
 Keskin referans çözümün nokta diyagramı ve ölçütleri: `results/reference_sharp/`. Ayrıntılı rapor: `docs/tasarim_raporu.html` / `.pdf`.
 
 ### Yorum (yıldız izleyici bakışıyla)
-- **Neden 18 µm RMS?** Alt-piksel merkezleme için PSF'nin komşu piksellere yayılması gerekir; Gauss benzeri bir PSF için σ ≈ 0,6–0,7 px (FWHM ≈ 1,5 px), merkezleme hatası ile gök-fonu gürültüsü arasındaki bilinen optimumdur. Keskin referans tasarımda (enerjinin %{ref['ensquared_1px_2px_3px']['0.00'][0]*100:.0f}'i tek pikselde) piksel-fazına bağlı sistematik merkezleme hatası **{ref['centroid_bias_px']['0.00']['rms']:.2f} px RMS** iken nihai tasarımda **{s['centroid_bias_px']['0.00']['rms']:.3f} px**'tir (≈ 5 kat iyileşme; kalan kısım kalibre edilebilir, kırınım ve piksel MTF'si gerçek PSF'yi daha da yumuşatır).
+- **Neden 18 µm RMS?** Alt-piksel merkezleme için PSF'nin komşu piksellere yayılması gerekir; Gauss benzeri bir PSF için σ ≈ 0,6–0,7 px (FWHM ≈ 1,5 px), merkezleme hatası ile gök-fonu gürültüsü arasındaki bilinen optimumdur. Keskin referans tasarımda (enerjinin %{ref['ensquared_1px_2px_3px']['0.00'][0]*100:.0f}'i tek pikselde) piksel-fazına bağlı sistematik merkezleme hatası **{ref['centroid_bias_px']['0.00']['rms']:.2f} px RMS** iken nihai tasarımda **{s['centroid_bias_px']['0.00']['rms']:.3f} px**'tir (≈ 4–5 kat iyileşme; kalan kısım alanla yavaş değişir ve kalibre edilebilir).
+- **Kırınım dâhil (Huygens PSF):** {hu_line}
 - **Blur nasıl üretildi?** Odak kaydırarak değil, optimizasyonla: her alan **ve her dalga boyu** için RMS yarıçapı 18 µm hedeflendi, PSF şekli için ⟨r⁴⟩/⟨r²⟩² = 2 (Gauss) hedefi eklendi ve aynı hedef ±50 µm odak kaymasında da istendi (odak/ısıya duyarsız blur). Sonuç, dengelenmiş küresel sapma + hafif odak kayması ile üretilen, alan boyunca tekdüze bir PSF'dir.
 - **Yanal renk** 1,1–1,7 µm'de ≤ {s['lateral_color_1p1_1p7_um']:.1f} µm (kenarda, alanla doğrusal → kalibre edilebilir). 0,9 µm'de {s['lateral_color_um_max']:.0f} µm; gündüz kullanımında bant geçiren filtre bu bölgeyi zaten dışlar.
 - **Distorsiyon** %{s['distortion_pct_max']:.2f} yastık ve alanla düzgün → yıldız kataloğu eşleştirmesinde 3. derece radyal modelle kalıntı < 0,05 px beklenir.

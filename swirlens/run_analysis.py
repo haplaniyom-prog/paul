@@ -30,6 +30,7 @@ def main(design, outdir, do_refocus=True):
     wf = A.plot_wavefront(L, os.path.join(outdir, "wavefront.png"))
     A.plot_psf_pixels(L, os.path.join(outdir, "psf_pixels.png"))
     ri_f2, ri2, ch2 = A.plot_illum_chief(L, os.path.join(outdir, "illumination_chief.png"))
+    hu = A.plot_huygens(L, os.path.join(outdir, "huygens_psf.png"), os.path.join(outdir, "huygens_profiles.png"))
     lam_rms = {}
     for lam in L.wavelengths:
         P0 = A.spot(L, 0.0, lam, 21); P1 = A.spot(L, L.fields_deg[-1], lam, 21)
@@ -40,7 +41,7 @@ def main(design, outdir, do_refocus=True):
     dfs, _, _, ddist, dych = A.field_curves(L, 7)
     iref = list(L.wavelengths).index(L.ref_wl)
     lc_1p1 = float(np.abs(np.delete(fc["lat"], [0], axis=1)).max()) if L.wavelengths[0] < 1.0 else float(np.abs(fc["lat"]).max())
-    json.dump(dict(wavefront_rms_pv_waves={f"{k:.2f}": list(v) for k, v in wf.items()},
+    json.dump(dict(huygens=hu, wavefront_rms_pv_waves={f"{k:.2f}": list(v) for k, v in wf.items()},
                    ri=[float(v) for v in ri2], chief=[float(v) for v in ch2], fields=[float(v) for v in ri_f2],
                    rms_lambda=lam_rms,
                    lateral_color=dict(wavelengths=list(L.wavelengths), fields=[float(v) for v in lcf], um=lcv.tolist()),

@@ -115,6 +115,8 @@ Yarı-açıklıklar vinyetlemesiz ışın izlerinden gelen serbest açıklıklar
 ![yerleşim](results/layout.png)
 ![nokta](results/spots.png)
 ![piksel ızgarasında PSF](results/psf_pixels.png)
+![Huygens PSF](results/huygens_psf.png)
+![Huygens PSF kesitleri](results/huygens_profiles.png)
 ![yıldız izleyici ölçütleri](results/startracker_metrics.png)
 ![odak](results/through_focus.png)
 ![alan-renk](results/field_curv_dist_color.png)
@@ -128,7 +130,8 @@ Yarı-açıklıklar vinyetlemesiz ışın izlerinden gelen serbest açıklıklar
 Keskin referans çözümün nokta diyagramı ve ölçütleri: `results/reference_sharp/`. Ayrıntılı rapor: `docs/tasarim_raporu.html` / `.pdf`.
 
 ### Yorum (yıldız izleyici bakışıyla)
-- **Neden 18 µm RMS?** Alt-piksel merkezleme için PSF'nin komşu piksellere yayılması gerekir; Gauss benzeri bir PSF için σ ≈ 0,6–0,7 px (FWHM ≈ 1,5 px), merkezleme hatası ile gök-fonu gürültüsü arasındaki bilinen optimumdur. Keskin referans tasarımda (enerjinin %86'i tek pikselde) piksel-fazına bağlı sistematik merkezleme hatası **0.14 px RMS** iken nihai tasarımda **0.035 px**'tir (≈ 5 kat iyileşme; kalan kısım kalibre edilebilir, kırınım ve piksel MTF'si gerçek PSF'yi daha da yumuşatır).
+- **Neden 18 µm RMS?** Alt-piksel merkezleme için PSF'nin komşu piksellere yayılması gerekir; Gauss benzeri bir PSF için σ ≈ 0,6–0,7 px (FWHM ≈ 1,5 px), merkezleme hatası ile gök-fonu gürültüsü arasındaki bilinen optimumdur. Keskin referans tasarımda (enerjinin %86'i tek pikselde) piksel-fazına bağlı sistematik merkezleme hatası **0.14 px RMS** iken nihai tasarımda **0.035 px**'tir (≈ 4–5 kat iyileşme; kalan kısım alanla yavaş değişir ve kalibre edilebilir).
+- **Kırınım dâhil (Huygens PSF):** Huygens düzlem-dalgacık toplamıyla hesaplanan polikromatik kırınım PSF'si geometrik sonucu doğrular: RMS yarıçap 18.1–18.5 µm, 3×3 piksel enerjisi ≥ 94 %, kırınım PSF'siyle sistematik merkezleme hatası ≤ 0.044 px RMS (`results/huygens_psf.png`).
 - **Blur nasıl üretildi?** Odak kaydırarak değil, optimizasyonla: her alan **ve her dalga boyu** için RMS yarıçapı 18 µm hedeflendi, PSF şekli için ⟨r⁴⟩/⟨r²⟩² = 2 (Gauss) hedefi eklendi ve aynı hedef ±50 µm odak kaymasında da istendi (odak/ısıya duyarsız blur). Sonuç, dengelenmiş küresel sapma + hafif odak kayması ile üretilen, alan boyunca tekdüze bir PSF'dir.
 - **Yanal renk** 1,1–1,7 µm'de ≤ 2.6 µm (kenarda, alanla doğrusal → kalibre edilebilir). 0,9 µm'de 8 µm; gündüz kullanımında bant geçiren filtre bu bölgeyi zaten dışlar.
 - **Distorsiyon** %0.28 yastık ve alanla düzgün → yıldız kataloğu eşleştirmesinde 3. derece radyal modelle kalıntı < 0,05 px beklenir.

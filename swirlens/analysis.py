@@ -634,3 +634,112 @@ def plot_illum_chief(lens, path):
     axs[1].grid(alpha=0.3); axs[1].set_title("Görüntü düzleminde ana ışın açısı")
     fig.tight_layout(); fig.savefig(path, dpi=150); plt.close(fig)
     return fs, ri, ch
+
+
+# ------------------------------------------------------------ Huygens PSF
+def huygens_psf(lens, field, npup=81, half_um=50.0, step_um=1.0, wavelengths=None, weights=None, chunk=400):
+    """Polychromatic diffraction PSF by Huygens plane-wavelet summation.
+
+    Every traced ray is treated as a plane wavelet at the image plane with
+    phase k*(OPL_j + L_j (x-x_j) + M_j (y-y_j)); the coherent sum over the
+    pupil gives E(x,y) for each wavelength, PSF = sum_l w_l |E_l|^2.  Image
+    coordinates are relative to the primary-wavelength chief ray, so lateral
+    colour is included.  Returns (x_um, y_um, psf normalised to unit sum)."""
+    wavelengths = lens.wavelengths if wavelengths is None else wavelengths
+    weights = lens.weights if weights is None else weights
+    v = np.linspace(-1, 1, npup); px, py = np.meshgrid(v, v)
+    inside = px ** 2 + py ** 2 <= 1.0
+    px = px[inside]; py = py[inside]
+    ref = lens.trace_field([0.0], [0.0], field, lens.ref_wl)["P"][0]
+    xs = np.arange(-half_um, half_um + 1e-9, step_um) * 1e-3
+    X, Y = np.meshgrid(xs, xs)
+    Xf = X.ravel() + ref[0]; Yf = Y.ravel() + ref[1]
+    psf = np.zeros(Xf.size)
+    for lam, w in zip(wavelengths, weights):
+        r = lens.trace_field(px, py, field, lam)
+        ok = r["ok"]
+        P, D, opl = r["P"][ok], r["D"][ok], r["opl"][ok]
+        opl = opl - opl.mean()
+        k = 2 * np.pi / (lam * 1e-3)
+        E = np.zeros(Xf.size, complex)
+        for i in range(0, P.shape[0], chunk):
+            Pc, Dc, oc = P[i:i + chunk], D[i:i + chunk], opl[i:i + chunk]
+            phase = k * (oc[:, None] + Dc[:, 0:1] * (Xf[None, :] - Pc[:, 0:1]) + Dc[:, 1:2] * (Yf[None, :] - Pc[:, 1:2]))
+            E += np.exp(1j * phase).sum(0)
+        I = np.abs(E) ** 2
+        psf += w * I / I.sum()
+    psf /= psf.sum()
+    return xs * 1e3, xs * 1e3, psf.reshape(X.shape)
+
+
+def psf_ensquared(x_um, psf, sizes_um=(20, 40, 60)):
+    """Ensquared energy of a sampled PSF about its centroid."""
+    X, Y = np.meshgrid(x_um, x_um)
+    cx = (psf * X).sum(); cy = (psf * Y).sum()
+    return [float(psf[(np.abs(X - cx) <= s / 2) & (np.abs(Y - cy) <= s / 2)].sum()) for s in sizes_um]
+
+
+def psf_centroid_bias(x_um, psf, pitch_um=20.0, nphase=8, window=5):
+    """Pixel-phase centroiding error (px) of a sampled PSF binned on the
+    detector grid, window x window centre-of-mass around the peak pixel."""
+    X, Y = np.meshgrid(x_um, x_um)
+    cx = (psf * X).sum(); cy = (psf * Y).sum()
+    xr = (X - cx) / pitch_um; yr = (Y - cy) / pitch_um
+    ph = (np.arange(nphase) + 0.5) / nphase - 0.5
+    half = int((window - 1) / 2)
+    nb = 2 * int(np.ceil(np.abs(xr).max())) + 5; off = nb // 2
+    errs = []
+    for dx in ph:
+        for dy in ph:
+            ix = np.floor(xr + dx + 0.5).astype(int) + off
+            iy = np.floor(yr + dy + 0.5).astype(int) + off
+            H = np.zeros((nb, nb))
+            np.add.at(H, (ix.ravel(), iy.ravel()), psf.ravel())
+            bx, by = np.unravel_index(np.argmax(H), H.shape)
+            sub = H[bx - half:bx + half + 1, by - half:by + half + 1]
+            ia, ib = np.meshgrid(np.arange(bx - half, bx + half + 1), np.arange(by - half, by + half + 1), indexing="ij")
+            tot = sub.sum()
+            mx = (sub * ia).sum() / tot - off; my = (sub * ib).sum() / tot - off
+            errs.append((mx - dx, my - dy))
+    e = np.hypot(*np.array(errs).T)
+    return float(np.sqrt((e ** 2).mean())), float(e.max())
+
+
+def plot_huygens(lens, path_img, path_prof, npup=81):
+    fields = lens.fields_deg
+    fig, axs = plt.subplots(1, len(fields), figsize=(4.2 * len(fields), 4.4))
+    fig2, ax2 = plt.subplots(1, 2, figsize=(11, 4))
+    cols = ["k", "tab:blue", "tab:green", "tab:red"]
+    out = {}
+    for ax, c, f in zip(axs, cols, fields):
+        x, y, psf = huygens_psf(lens, f, npup=npup)
+        pk = psf.max()
+        from matplotlib.colors import PowerNorm
+        im = ax.imshow(psf / pk, extent=[x[0], x[-1], y[0], y[-1]], origin="lower", cmap="inferno", norm=PowerNorm(0.5, vmin=0, vmax=1))
+        for g in np.arange(-50, 51, 20):
+            ax.axvline(g, color="w", lw=0.4, alpha=0.5); ax.axhline(g, color="w", lw=0.4, alpha=0.5)
+        ee = psf_ensquared(x, psf)
+        cb = psf_centroid_bias(x, psf)
+        # FWHM-ish: equivalent Gaussian sigma from second moment
+        X, Y = np.meshgrid(x, y); cx = (psf * X).sum(); cy = (psf * Y).sum()
+        rms = np.sqrt((psf * ((X - cx) ** 2 + (Y - cy) ** 2)).sum())
+        out[f"{f:.2f}"] = dict(ee_1px=ee[0], ee_2px=ee[1], ee_3px=ee[2], rms_um=float(rms), centroid_bias_rms_px=cb[0],
+                              centroid_bias_max_px=cb[1], peak_norm=float(pk))
+        ax.set_title(f"alan {f:.2f}°\nRMS {rms:.1f} µm · 1×1 {ee[0]*100:.0f} % · 3×3 {ee[2]*100:.0f} %", fontsize=10)
+        ax.set_xlabel("µm"); ax.set_xticks([-40, -20, 0, 20, 40]); ax.set_yticks([-40, -20, 0, 20, 40])
+        i0 = np.argmin(np.abs(y - cy))
+        ax2[0].plot(x, psf[i0] / pk, color=c, label=f"{f:.2f}° (x)")
+        j0 = np.argmin(np.abs(x - cx))
+        ax2[0].plot(y, psf[:, j0] / pk, color=c, ls="--", lw=0.9)
+        r = np.hypot(X - cx, Y - cy).ravel(); order = np.argsort(r)
+        ax2[1].plot(r[order], np.cumsum(psf.ravel()[order]) * 100, color=c, label=f"{f:.2f}°")
+    fig.colorbar(im, ax=axs, fraction=0.02, pad=0.02, label="normalize yoğunluk (karekök ölçek)")
+    fig.suptitle("Huygens PSF (polikromatik, kırınım dâhil) — beyaz ızgara 20 µm piksel")
+    fig.savefig(path_img, dpi=150, bbox_inches="tight"); plt.close(fig)
+    ax2[0].axvspan(-10, 10, color="gray", alpha=0.12); ax2[0].set_xlabel("µm"); ax2[0].set_ylabel("normalize yoğunluk")
+    ax2[0].set_title("Huygens PSF kesitleri (düz: x, kesikli: y)"); ax2[0].grid(alpha=0.3); ax2[0].legend(fontsize=8)
+    ax2[1].axvline(10, color="gray", ls=":"); ax2[1].axvline(30, color="gray", ls=":")
+    ax2[1].set_xlabel("yarıçap (µm)"); ax2[1].set_ylabel("çevrelenen enerji (%)"); ax2[1].set_xlim(0, 50)
+    ax2[1].set_title("Huygens PSF çevrelenen enerji"); ax2[1].grid(alpha=0.3); ax2[1].legend(fontsize=8)
+    fig2.tight_layout(); fig2.savefig(path_prof, dpi=150); plt.close(fig2)
+    return out

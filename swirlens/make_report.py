@@ -150,6 +150,11 @@ def build(rd="results", out="docs/tasarim_raporu.html"):
                    [[fmt(f, 2) + "°", f"{r*100:.1f} %", fmt(c, 1) + "°"] for f, r, c in list(zip(rif, ri, ch))[::2]],
                    "num", ["", "r", "r"])
 
+    hu = X.get("huygens", {})
+    hu_tbl = table(["Alan", "RMS yarıçap (µm)", "1×1 px", "2×2 px", "3×3 px", "Merkezleme hatası RMS / maks. (px)"],
+                   [[k + "°", fmt(v["rms_um"]), f"{v['ee_1px']*100:.0f} %", f"{v['ee_2px']*100:.0f} %", f"{v['ee_3px']*100:.0f} %",
+                     f"{fmt(v['centroid_bias_rms_px'],3)} / {fmt(v['centroid_bias_max_px'],3)}"] for k, v in hu.items()],
+                   "num", ["", "r", "r", "r", "r", "r"]) if hu else ""
     m = S
     # ---------------------------------------------------------------- html
     css = """
@@ -269,7 +274,7 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <ul>
 <li><b>Keskin referans:</b> 4 alan × 5 dalga boyu × ~50 ışın için polikromatik merkez etrafında RMS nokta + kısıtlar (EFL = 75, arka açıklık ≤ 10 mm yarı-çap, arka tepe ≥ 1 mm flanş önünde, kenar kalınlıkları ≥ 1 mm, stop halkası–cam boşluğu ≥ 0,5 mm, toplam uzunluk ≤ 110 mm, ana ışın ≤ 16°) ve yanal renk terimi.</li>
 <li><b>Yıldız izleyici PSF'si:</b> her alan <i>ve</i> her dalga boyu için RMS yarıçapı → 18 µm; PSF basıklığı ⟨r⁴⟩/⟨r²⟩² → 2 (Gauss); aynı hedefler −50 ve +50 µm odak kaymasında da (odak duyarsızlığı); yanal renk terimi. Blur böylece odak kaydırmayla değil, dengelenmiş küresel sapma + hafif odak kaymasıyla üretildi.</li>
-<li><b>Doğrulama:</b> piksel-fazı merkezleme hatası simülasyonu (geometrik PSF, 20 µm ızgara, 5×5 ağırlık merkezi) ve kırınım MTF'si (gözbebeği otokorelasyonu, yanal renk dâhil polikromatik OTF).</li>
+<li><b>Doğrulama:</b> piksel-fazı merkezleme hatası simülasyonu (geometrik ve Huygens PSF, 20 µm ızgara, 5×5 ağırlık merkezi), Huygens kırınım PSF'si ve kırınım MTF'si (gözbebeği otokorelasyonu, yanal renk dâhil polikromatik OTF).</li>
 </ul>
 
 <h2><span>6</span>Nokta görüntüsü ve PSF</h2>
@@ -279,24 +284,32 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <div class="two">{ens_tbl}{lam_tbl}</div>
 <p>Dalga boyuna göre blur büyüklüğü zayıf değişir; bu, blur'un dalga boyundan bağımsız küresel sapmayla üretilmesinin sonucudur. Salt odak kaydırmayla aynı blur üretilseydi ±125 µm kromatik odak kayması nedeniyle 0,9 µm yıldızlar keskin, 1,7 µm yıldızlar iki kat büyük görünürdü.</p>
 
-<h2><span>7</span>Merkezleme performansı</h2>
+<h2><span>7</span>Huygens PSF (kırınım dâhil)</h2>
+<p>Geometrik nokta diyagramı kırınımı içermez. Huygens PSF, gözbebeği ızgarasındaki her ışını görüntü düzleminde optik yol uzunluğu fazlı bir düzlem dalgacık olarak alır ve dalgacıkları tutarlı toplar (OpticStudio'nun Huygens PSF yöntemiyle aynı yaklaşım). Beş dalga boyunun yoğunlukları spektral ağırlıklarla toplanmış, koordinatlar 1,3 µm ana ışınına göre alınmıştır; böylece yanal renk de PSF'ye dâhildir. Görüntü penceresi ±50 µm (5 piksel), örnekleme 1 µm, gözbebeği 81 × 81.</p>
+{fig("huygens_psf.png","Polikromatik Huygens PSF, dört alan; renk ölçeği her karede kendi tepe değerine normalize ve karekök (γ = 0,5) sıkıştırmalıdır, beyaz ızgara 20 µm pikselleri gösterir. Başlıklarda PSF'nin ikinci-moment RMS yarıçapı ve 1×1 / 3×3 piksel kare-içi enerjisi verilmiştir.")}
+{fig("huygens_profiles.png","Huygens PSF'nin x ve y kesitleri (gri bant tek piksel) ve çevrelenen enerji eğrileri; noktalı çizgiler ½ ve 1½ piksel yarıçapı.")}
+{hu_tbl}
+<p>Kırınım PSF'si geometrik sonuçları doğrular: ikinci-moment RMS yarıçapı ve kare-içi enerji geometrik değerlerle ±1 µm / ±2 puan içinde örtüşür. Blur dengelenmiş küresel sapmayla üretildiği için PSF, eş merkezli girişim halkaları ve eksende parlak bir çekirdek gösterir; bu ince yapı 20 µm piksel içinde integre olur ve tabloda verilen kare-içi enerji ile merkezleme hatası bu yapıyı içerir. Kırınım PSF'siyle hesaplanan sistematik merkezleme hatası geometrik PSF'ye göre yaklaşık 0,01 px daha yüksektir; rapor boyunca temkinli değer olarak bu alınmalıdır.</p>
+
+<h2><span>8</span>Merkezleme performansı</h2>
 <p>Yıldız görüntüsü 8 × 8 alt-piksel fazında ızgaraya kaydırılıp 20 µm piksellere bölündü; en parlak piksel etrafındaki 5×5 pencerede ağırlık merkezi hesaplandı ve gerçek merkezle farkı alındı. Gürültü eklenmemiştir; tablo yalnızca PSF şeklinden kaynaklanan sistematik hatayı gösterir.</p>
 {fig("startracker_metrics.png","Soldan sağa: kare-içi enerji (1×1, 2×2, 3×3 px) alan boyunca; çevrelenen enerji profili (tüm alanlar üst üste biner); piksel-fazı merkezleme hatası RMS ve maksimum.")}
 {cb_tbl}
-<div class="key"><p>Keskin referansta aynı simülasyon {fmt(R['centroid_bias_px']['0.00']['rms'],3)} px RMS / {fmt(R['centroid_bias_px']['0.00']['max'],3)} px maks. verir. Kırınım (Airy yarıçapı ≈ 3,5 µm) ve piksel MTF'si gerçek PSF'yi daha da yumuşattığı için gerçek sistematik hata burada verilenden küçük olmalıdır. Farklı merkezleme algoritmaları (Gauss uydurma, eşikli ağırlık merkezi) için hedef blur 15–22 µm arasında yeniden seçilebilir; optimizasyon bunu tek parametreyle destekler.</p></div>
+<p>Aynı simülasyon Huygens (kırınım dâhil) PSF'si ile tekrarlandığında sistematik hata {fmt(max(v['centroid_bias_rms_px'] for v in hu.values()),3)} px RMS'yi aşmaz (Bölüm 7 tablosu); geometrik ve kırınım sonuçları birbirini doğrular.</p>
+<div class="key"><p>Keskin referansta aynı simülasyon {fmt(R['centroid_bias_px']['0.00']['rms'],3)} px RMS / {fmt(R['centroid_bias_px']['0.00']['max'],3)} px maks. verir. Farklı merkezleme algoritmaları (Gauss uydurma, eşikli ağırlık merkezi) için hedef blur 15–22 µm arasında yeniden seçilebilir; optimizasyon bunu tek parametreyle destekler.</p></div>
 
-<h2><span>8</span>Odak boyunca davranış</h2>
+<h2><span>9</span>Odak boyunca davranış</h2>
 <p>Blur büyüklüğü odak hatasına duyarsız olacak şekilde optimize edilmiştir. Tablo, görüntü düzlemi nominalden kaydırıldığında polikromatik RMS nokta yarıçapını verir; montajda odak, 3×3 kare-içi enerji ≥ %95 ve 1×1 ≤ %40 kriteriyle ayarlanır.</p>
 {fig("through_focus.png","Odak boyunca RMS nokta yarıçapı (sol) ve 25 lp/mm'de MTF (sağ). RMS minimumu bilinçli olarak nominal düzlemin ~50 µm önündedir; nominal düzlem, alan boyunca tekdüzelik ve odak duyarsızlığı için seçilmiştir.")}
 {tf_tbl}
 
-<h2><span>9</span>MTF ve dalga cephesi</h2>
+<h2><span>10</span>MTF ve dalga cephesi</h2>
 <p>MTF, yayılmış PSF tasarımında bilinçli olarak düşüktür ve buradaki rolü görüntü kalitesi ölçütü değil, PSF'nin alan boyunca tekdüzeliğinin doğrulanmasıdır. Dalga cephesi haritaları blur'un ağırlıkla dönel simetrik (küresel + odak) bileşenlerden oluştuğunu, kenar alanda hafif astigmatizma eklendiğini gösterir.</p>
 {fig("mtf.png","Polikromatik kırınım MTF'si, tanjantsal (düz) ve sagital (kesikli), 4 alan; gri noktalı çizgi 1,3 µm kırınım sınırı, düşey çizgi 25 lp/mm Nyquist.")}
 {fig("wavefront.png","Çıkış gözbebeğinde OPD haritaları, λ = 1,3 µm (birim: dalga).")}
 {wf_tbl}
 
-<h2><span>10</span>Alan eğriliği, distorsiyon ve renk</h2>
+<h2><span>11</span>Alan eğriliği, distorsiyon ve renk</h2>
 {fig("field_curv_dist_color.png","Soldan sağa: tanjantsal/sagital paraksiyel odak konumu (görüntü düzlemine göre; nominal düzlem paraksiyel odağın önündedir), kalibre EFL'ye göre distorsiyon, dalga boyuna göre nokta merkezi kayması (yanal renk), paraksiyel kromatik odak kayması.")}
 <div class="two">{fc_tbl}{dist_tbl}</div>
 <h3>Yanal renk</h3>
@@ -306,16 +319,16 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <p>Paraksiyel odak 0,9→1,7 µm boyunca tek yönlü kayar; bu birincil renk kalıntısı, blur büyüklüğünün dalga boyuyla dengelenmesinin (Bölüm 6) bir parçasıdır ve PSF'nin dalga boyuna göre büyüklüğü tablo 6'da görüldüğü gibi küçük değişir.</p>
 {cfs_tbl}
 
-<h2><span>11</span>Aydınlatma ve ana ışın açısı</h2>
+<h2><span>12</span>Aydınlatma ve ana ışın açısı</h2>
 {fig("illumination_chief.png","Bağıl aydınlatma (yön kosinüsü uzayında çıkış konisi alanı, eksene göre) ve görüntü düzleminde ana ışın açısı.")}
 {ri_tbl}
 
-<h2><span>12</span>Tolerans duyarlılığı</h2>
+<h2><span>13</span>Tolerans duyarlılığı</h2>
 <p>Yarıçap (+%0,1), kalınlık/hava aralığı (+50 µm) ve eleman kaçıklığı (20 µm) tekil sapmaları. Odak telafi elemanıdır: her sapma sonrası odak, alan-ortalamalı RMS'yi nominal {fmt(S['sensitivity_base_rms_um'])} µm'ye geri getirecek şekilde ayarlanmıştır. Kaçıklık satırlarında ΔRMS blur'un alan boyunca tepe-tepe değişimidir; boresight sütunu eksen yıldızının merkez kaymasıdır.</p>
 {sens_tbl}
 <p>Yarıçap ve kalınlık hataları yalnızca odak düzeltmesi gerektirir (en hassası E6–düzleştirici aralığı: +50 µm → ≈ −135 µm odak). Kaçıklıklar PSF tekdüzeliğini ≤ 0,5 µm bozar; boresight kaymaları (≤ 17 µm / 20 µm kaçıklık) uçuşta yıldızlarla kalibre edilir, kritik olan ısıl/mekanik kararlılıktır.</p>
 
-<h2><span>13</span>Mekanik ve entegrasyon</h2>
+<h2><span>14</span>Mekanik ve entegrasyon</h2>
 <ul>
 <li>Toplam uzunluk S1 → görüntü {fmt(misc['track'],1)} mm; flanştan öne ≈ {fmt(misc['track']-17.526,1)} mm; ön eleman çapı ≈ 48 mm (kamera gövdesi 55 × 55 mm ile uyumlu). Arka eleman serbest açıklığı 20,5 mm, arka tepe flanşın {fmt(misc['rear_vertex_to_flange'],2)} mm önünde.</li>
 <li>Odaklama: ±0,3 mm ayar (helikoid veya shim). Montaj kriteri: kolimatör/yıldız görüntüsünde 3×3 kare-içi enerji ≥ %95 ve 1×1 ≤ %40 (RMS ≈ 17–18 µm). PSF ±50 µm odak hatasına toleranslıdır.</li>
@@ -323,12 +336,12 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <li>Camlar: SCHOTT N-PSK53A, N-KZFS4, N-SF6; 1,7 µm'ye kadar iç geçirgenlik yüksek. Cam kütlesi ≈ 160 g, hücreyle ≈ 400–450 g.</li>
 </ul>
 
-<h2><span>14</span>Sınırlamalar ve sonraki adımlar</h2>
+<h2><span>15</span>Sınırlamalar ve sonraki adımlar</h2>
 <ul>
 <li>Kamera penceresi/soğuk filtre kalınlığı veri sayfasında verilmediği için görüntü uzayı hava kabul edildi; pencere odak ayarıyla telafi edilir.</li>
 <li>Sellmeier katsayıları SCHOTT kataloğundandır ve n<sub>d</sub> ile doğrulanmıştır; üretim öncesi eriyik verileriyle yeniden optimizasyon önerilir.</li>
 <li>Isıl analiz yapılmamıştır; −40…+70 °C için odak kayması ve PSF büyüklüğü değişimi hücre malzemesiyle birlikte çalışılmalıdır. Blur'un odak duyarsızlığı bu adımı kolaylaştırır.</li>
-<li>Merkezleme simülasyonu geometrik PSF ile, gürültüsüz ve basit ağırlık merkeziyle yapılmıştır; gerçek algoritma ve gök fonu gürültüsü ile uçtan uca SNR/merkezleme bütçesi bir sonraki adımdır.</li>
+<li>Merkezleme simülasyonu gürültüsüz ve basit ağırlık merkeziyle yapılmıştır (geometrik ve Huygens PSF ile); gerçek algoritma ve gök fonu gürültüsü ile uçtan uca SNR/merkezleme bütçesi bir sonraki adımdır.</li>
 <li>Hayalet (ghost) ve saçılma analizi yapılmamıştır; gündüz kullanımında güneş açısı bütçesiyle birlikte değerlendirilmelidir.</li>
 </ul>
 <div class="foot">Tüm analizler depodaki <code>swirlens</code> ışın izleyicisiyle üretilmiştir; sayısal kaynak <code>results/summary.json</code>, <code>results/extra_metrics.json</code>, <code>results/sensitivity.txt</code>. Zemax dosyası <code>results/swir_75mm_f18_cmount.zmx</code>.</div>
