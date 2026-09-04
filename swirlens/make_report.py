@@ -79,6 +79,13 @@ def build(rd="results", out="docs/tasarim_raporu.html"):
     glass_tbl = table(["Cam", "n(0,9 µm)", "n(1,3 µm)", "n(1,7 µm)", "V<sub>SWIR</sub>", "P<sub>SWIR</sub>", "Rol"],
                       glass_rows, "num", ["", "r", "r", "r", "r", "r", ""])
 
+    search2 = json.load(open(f"{rd}/search2/summary.json")) if os.path.exists(f"{rd}/search2/summary.json") else []
+    s2 = sorted([r for r in search2 if "error" not in r], key=lambda r: r["merit"])
+    s2_rows = [[r["crown"], r["flint"]] + [fmt(v) for v in r["rms_um"]] +
+               [f"{r['thermal']['-40']['defocus_um']:+.0f} / {r['thermal']['70']['defocus_um']:+.0f}", fmt(r['thermal']['70']['efl_ppm'] / 50, 0)]
+               for r in s2[:16]]
+    s2_tbl = table(["Kron", "Flint", "RMS 0°", "RMS 3,1°", "RMS 4,4°", "RMS 6,24° (µm)", "Odak kayması −40/+70 °C (µm, Al)", "EFL ppm/K"],
+                   s2_rows, "num", ["", "", "r", "r", "r", "r", "r", "r"]) if s2_rows else ""
     search_rows = [[r["crown"], r["flint"]] + [fmt(v) for v in r["rms_um"]] for r in search]
     search_tbl = table(["Kron", "Flint", "RMS 0° (µm)", "RMS 3,1°", "RMS 4,4°", "RMS 6,24°"], search_rows,
                        "num", ["", "", "r", "r", "r", "r"]) if search else "<p><i>Tarama tablosu bu çalışma dizininde yok.</i></p>"
@@ -259,7 +266,7 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <style>{css}</style>
 <div class="page">
 <header class="cover">
-<div class="eyebrow">Optik tasarım raporu · {TODAY} · Rev. B</div>
+<div class="eyebrow">Optik tasarım raporu · {TODAY} · Rev. C</div>
 <h1>75 mm f/1,8 SWIR C&#8209;mount objektif — gündüz yıldız izleyici için</h1>
 <p class="sub">Xenics Wildcat 640 InGaAs kamerası (640 × 512, 20 µm) için sıfırdan tasarlanmış, alt-piksel merkezleme amacıyla PSF'si bilinçli olarak yayılmış 7 elemanlı Petzval türevi objektifin tasarım gerekçesi, reçetesi ve tüm performans analizleri.</p>
 <div class="meta">
@@ -280,6 +287,9 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <div><small>Merkezleme hatası</small><b>{fmt(max(v['rms'] for v in cb.values()),3)} px</b><i>sistematik, RMS, en kötü alan</i></div>
 <div><small>Yanal renk 1,1–1,7 µm</small><b>{fmt(S['lateral_color_1p1_1p7_um'])} µm</b><i>kenar alan, ≈ {fmt(S['lateral_color_1p1_1p7_um']/20,2)} px</i></div>
 <div><small>Distorsiyon</small><b>{fmt(S['distortion_pct_max'],2)} %</b><i>yastık, düzgün</i></div>
+</div>
+<div class="key">
+<p><b>Rev. C'de ne değişti.</b> Önceki reçetenin ön dublet kronu (E2), düzeltilmiş stop modeliyle yeniden değerlendirildiğinde bıçak kenarlı çıktı (mekanik payda kenar kalınlığı &lt; 0) ve arka eleman 20,5 mm istiyordu. Rev. C, kenar kalınlığı ≥ 1 mm, cam kalınlığı ≤ 13 mm, arka açıklık 20 mm ve stop–cam boşluğu ≥ 0,5 mm kısıtlarıyla, 64 çiftlik termal ağırlıklı ikinci cam taramasının ardından N-PSK53A / N-KZFS11 / N-SF6 ile yeniden optimize edildi; toplam uzunluk 95 → 89 mm, cam kütlesi 188 → 179 g.</p>
 </div>
 <div class="key">
 <p><b>Yıldız izleyici için kritik sonuç.</b> Aynı optik formun keskin çözümü enerjinin %{R['ensquared_1px_2px_3px']['0.00'][0]*100:.0f}'ini tek piksele toplar ve piksel-fazına bağlı sistematik merkezleme hatası {fmt(R['centroid_bias_px']['0.00']['rms'],2)} px RMS olur. Nihai tasarımda bu hata {fmt(S['centroid_bias_px']['0.00']['rms'],3)} px'e iner (≈ 5 kat), PSF alan ve dalga boyu boyunca tekdüze kalır ve ±50 µm odak hatasına duyarsızdır.</p>
@@ -309,9 +319,13 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <h3>SWIR'de cam dispersiyonu</h3>
 <p>Görünür bölge Abbe sayıları SWIR'de anlamını yitirir. 0,9 / 1,3 / 1,7 µm için <i>V</i><sub>SWIR</sub> = (n<sub>1,3</sub> − 1)/(n<sub>0,9</sub> − n<sub>1,7</sub>) ve kısmi dispersiyon <i>P</i><sub>SWIR</sub> = (n<sub>0,9</sub> − n<sub>1,3</sub>)/(n<sub>0,9</sub> − n<sub>1,7</sub>) hesaplandı. Klasik N-LAK9/N-SF6 çifti SWIR'de yalnızca ΔV ≈ 8 ve büyük ΔP verir; ikincil spektrum tüm alanlarda ~30 µm RMS bırakır. Seçilen {G_CROWN} / {G_FLINT} çiftinin SWIR kısmi dispersiyon farkı ΔP = {fmt(abs(G.swir_partial(G_CROWN)-G.swir_partial(G_FLINT)),3)}, Abbe farkı ΔV = {fmt(G.swir_abbe(G_CROWN)-G.swir_abbe(G_FLINT))}'dir; ikinci tur taramada termal davranış da seçim ölçütüne eklenmiştir (Bölüm 15).</p>
 {glass_tbl}
-<h3>Cam çifti taraması</h3>
+<h3>Cam çifti taraması — 1. tur</h3>
 <p>16 kron/flint çifti aynı başlangıç formundan kademeli (f/2,8 → f/2,2 → f/1,8) optimize edildi; tablo keskin (blur'suz) merit ile elde edilen polikromatik RMS nokta yarıçaplarını verir.</p>
 {search_tbl}
+<h3>Cam çifti taraması — 2. tur (termal ağırlıklı, üretilebilirlik kısıtlı)</h3>
+<p>Tam SCHOTT kataloğundan (122 cam) analitik ön elemeyle 608 çift puanlandı (SWIR ikincil spektrum, Abbe farkı, dublet termo-optik uyumsuzluğu); ilk 64 çift, yanal renk, alüminyum gövdeyle −40/+70 °C odak kayması ve EFL sürüklenmesi, kenar kalınlığı ≥ 1 mm, cam kalınlığı ≤ 13 mm, arka açıklık 20 mm ve stop boşluğu kısıtlarıyla kademeli optimize edildi (merit sırasına göre ilk 16):</p>
+{s2_tbl}
+<div class="key"><p><b>Taramanın sonucu.</b> Termal olarak dengeli düşük-dispersiyonlu çiftler (ör. N-BAK1/N-KZFS11: ±36 µm, 8 ppm/K) f/1,8'de yeterli görüntü kalitesine ulaşamaz (RMS 16–24 µm, yanal renk > 10 µm); en iyi görüntü kalitesini veren fluor-kron/KZFS çiftleri ise termal olarak daha kötüdür (±90–100 µm, 50–60 ppm/K). Termal ağırlığı artırmak odak kaymasını yalnızca ±60 → ±50 µm'ye indirirken RMS'yi iki katına çıkarır: bu form ve cam ailesiyle optik atermalizasyon mümkün değildir, termal kalıntı mekanik olarak (odak ön-ofseti / telafi ara parçası, Bölüm 15) giderilir. Seçim, iyi başlangıç havzasından çok-başlangıçlı cila ile N-PSK53A / N-KZFS11 (düzleştirici N-SF6) üzerinde kaldı: N-PSK53A/N-KZFS4 ile başa baş, daha düzgün PSF ve daha düşük yanal renk.</p></div>
 
 <h2><span>4</span>Reçete</h2>
 <p>Sonsuz konjuge, mm. Yarı-açıklıklar vinyetlemesiz ışın izlerinden gelen serbest açıklıklardır; mekanik kenar için 0,5–0,8 mm eklenmelidir. Stop (yüzey 6) E4'ün 3,1 mm önünde bağımsız bir halkadır; çapı, gerçek eksenel kenar ışınının 41,67 mm giriş demetiyle geçmesine göre belirlenmiştir. Zemax dosyası: <code>results/swir_75mm_f18_cmount.zmx</code>.</p>
