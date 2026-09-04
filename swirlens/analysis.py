@@ -468,7 +468,6 @@ def export_zmx(lens, path):
     L.append("YFLN " + " ".join(f"{f}" for f in lens.fields_deg))
     L.append("FWGN 1 1 1 1")
     L.append("VDXN 0 0 0 0"); L.append("VDYN 0 0 0 0"); L.append("VCXN 0 0 0 0"); L.append("VCYN 0 0 0 0"); L.append("VANN 0 0 0 0")
-    L.append("WAVM 1 " + " ".join(f"{l:.6f} {w}" for l, w in zip(lens.wavelengths, lens.weights)))
     for i, (l, w) in enumerate(zip(lens.wavelengths, lens.weights)):
         L.append(f"WAVM {i+1} {l:.6f} {w}")
     L.append(f"PWAV {list(lens.wavelengths).index(lens.ref_wl)+1}")
@@ -476,7 +475,6 @@ def export_zmx(lens, path):
     L.append("GLRS 1 0")
     L.append("GSTD 0 100.000 100.000 100.000 100.000 100.000 100.000 0 1 1 0 0 1 1 1 1 1 1")
     L.append("NSCD 100 500 0 1.0E-3 5 1.0E-6 0 0 0 0 0 0 1000000 0 2")
-    L.append("COFN QF \"COATING.DAT\" \"SCATTER_PROFILE.DAT\" \"ABG_DATA.DAT\" \"PROFILE.GRD\"")
     L.append("COFN COATING.DAT SCATTER_PROFILE.DAT ABG_DATA.DAT PROFILE.GRD")
     L.append("SURF 0"); L.append("  TYPE STANDARD"); L.append("  CURV 0.0"); L.append("  DISZ INFINITY")
     for k, s in enumerate(lens.surfaces):
