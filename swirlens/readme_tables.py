@@ -135,9 +135,7 @@ cam indisleri SCHOTT dn/dT modeli, cam ve gövde genleşmesi, alüminyum kamera 
 
 {th_tbl}
 
-- Baskın etki camdır (N-PSK53A dn/dT < 0, N-KZFS4 dn/dT > 0 aynı yöne çalışır; yüksek eleman güçleri indis değişimini
-  EFL'ye ~4–5 kat büyütür). Gövde genleşmesi ters yönde ve zayıftır: **hiçbir metal tek başına atermal değildir**, alüminyum
-  en iyi, Invar en kötüdür. Atermal gövde katsayısı ≈ {th['alpha_athermal_1e6']:.0f}·10⁻⁶/K (polimer bölgesi).
+- Atermal gövde katsayısı ≈ {th['alpha_athermal_1e6']:.0f}·10⁻⁶/K; en iyi metal gövde tablodaki en küçük odak kaymasını verendir.
 - Plaka ölçeği (EFL) {min(d['efl_ppm_per_K'] for d in th['materials'].values()):.0f}–{max(d['efl_ppm_per_K'] for d in th['materials'].values()):.0f} ppm/K sürüklenir (kenarda ±0,9 px / ±55 K) → sıcaklık indeksli kalibrasyon tablosu gerekir.
 - Çözümler: montajda soğuk tarafa odak ön-ofseti (Al gövde: {th['focus_bias_opt']['Alüminyum 6061']['bias_um']:+.0f} µm → en kötü RMS {th['focus_bias_opt']['Alüminyum 6061']['worst_rms_um']:.0f} µm),
   ya da Al gövde ile seri ≈ {th['compensator_spacer_mm']['Alüminyum 6061']['POM (110e-6/K)']:.0f} mm POM / ≈ {th['compensator_spacer_mm']['Alüminyum 6061']['PTFE (120e-6/K)']:.0f} mm PTFE telafi ara parçası (pasif atermalizasyon), ya da aktif odak. Ayrıntı: `docs/tasarim_raporu.html` §14.

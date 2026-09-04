@@ -97,7 +97,7 @@ def bounds(lens, layout):
         else:
             s = lens.surfaces[i]
             if s.glass != "AIR":
-                lo.append(2.0); hi.append(16.0)
+                lo.append(2.0); hi.append(13.0)
             elif i == n - 1:
                 lo.append(BFL_MIN); hi.append(30.0)
             else:

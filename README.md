@@ -200,15 +200,16 @@ cam indisleri SCHOTT dn/dT modeli, cam ve gövde genleşmesi, alüminyum kamera 
 
 ```bash
 pip install -r requirements.txt
-python -m swirlens.glass            # SWIR cam tablosu (V, P) ve Sellmeier öz-denetimi
+python -m swirlens.glass                 # SWIR cam tablosu (V, P) ve Sellmeier öz-denetimi (122 SCHOTT camı)
 python -m swirlens.optimize N-PSK53A N-KZFS4 results/design_opt.json   # kademeli optimizasyon (f/2.8→2.2→1.8)
-python -m swirlens.glass_search     # 16 cam çiftini paralel tarar (results/search/)
-python -m swirlens.refine results/search/N-PSK53A_N-KZFS4.json 700     # cam varyantları
-# keskin referans: yanal renk ağırlıklı cila
-python -m swirlens.polish 3.0 results/sharp.json 0 results/refine/flattener_SF6.json
-# yıldız izleyici PSF'si: hedef RMS 18 µm, Gauss şekil ağırlığı 0.1, ±50 µm odakta da aynı hedef
-python -m swirlens.polish 3.0 results/design_final.json 0 results/sharp.json 18 0.1 50
+python -m swirlens.glass_search          # 1. tur: 16 cam çifti (keskin merit)
+python -m swirlens.glass_search2 64 4    # 2. tur: analitik ön eleme + 64 çiftin termal ağırlıklı taraması (4 çekirdek)
+python -m swirlens.polish in.json out.json lc=3 th=0.25                      # keskin cila (yanal renk + termal)
+python -m swirlens.polish in.json out.json lc=3 target=18 shape=0.1 tf=50 th=0.25  # yıldız izleyici PSF'si
 python -m swirlens.run_analysis results/design_final.json results --refocus-restore  # tüm grafik/tablolar
+python -m swirlens.thermal               # dört gövde malzemesi için termal analiz
+python -m swirlens.ghosts                # paraksiyel hayalet analizi
+python -m swirlens.finalize <sharp.json> # seçilen camdan uçtan uca: cila, analizler, README, rapor, PDF
 ```
 
 `swirlens/raytrace.py`: küresel yüzeyler için vektörleştirilmiş sıralı gerçek ışın izleme

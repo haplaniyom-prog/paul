@@ -45,7 +45,7 @@ def candidates():
     return pairs
 
 
-MKW = dict(lc_weight=3.0, th_weight=0.5, efl_th_weight=0.1, thick_weight=0.02)
+MKW = dict(lc_weight=3.0, th_weight=0.25, efl_th_weight=0.05, thick_weight=0.003)
 
 
 def run(pair):

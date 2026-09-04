@@ -54,10 +54,26 @@ def build(rd="results", out="docs/tasarim_raporu.html"):
     pres_tbl = table(["Yüzey", "Yarıçap (mm)", "Kalınlık (mm)", "Cam", "Yarı-açıklık (mm)", "Not"], pres_rows,
                      "num", ["c", "r", "r", "c", "r", ""])
 
-    glasses = ["N-PSK53A", "N-KZFS4", "N-SF6", "N-LAK9", "N-PK52A", "N-KZFS11", "N-BK7"]
-    role = {"N-PSK53A": "pozitif elemanlar (E1, E2, E5, E6)", "N-KZFS4": "negatif dublet elemanları (E3, E4)",
-            "N-SF6": "alan düzleştirici (E7)", "N-LAK9": "elendi (görünür-bölge kronu)",
-            "N-PK52A": "elendi (düşük indis, kenar alan)", "N-KZFS11": "alternatif flint", "N-BK7": "referans"}
+    D = json.load(open(f"{rd}/design_final.json"))
+    used = []
+    for k, sd in enumerate(D["surfaces"]):
+        if sd["glass"] != "AIR" and sd["glass"] not in used:
+            used.append(sd["glass"])
+    role = {}
+    eno = 0
+    for k, sd in enumerate(D["surfaces"]):
+        if sd["glass"] != "AIR" and (k == 0 or D["surfaces"][k - 1]["glass"] == "AIR" or True):
+            pass
+    # element numbering: each glass surface starts an element
+    elems = [(i, sd["glass"]) for i, sd in enumerate(D["surfaces"]) if sd["glass"] != "AIR"]
+    for g in used:
+        role[g] = "elemanlar " + ", ".join(f"E{n+1}" for n, (i, gg) in enumerate(elems) if gg == g)
+    G_CROWN, G_FLINT, G_FLAT = used[0], used[1] if len(used) > 1 else used[0], used[-1]
+    extra = {"N-LAK9": "elendi (görünür-bölge kronu)", "N-SF6": "önceki alan düzleştirici", "N-PSK53A": "önceki tasarım kronu",
+             "N-KZFS4": "önceki tasarım flinti", "N-PK52A": "elendi (düşük indis)", "N-BK7": "referans"}
+    glasses = used + [g for g in extra if g not in used]
+    for g in extra:
+        role.setdefault(g, extra[g])
     glass_rows = [[g, fmt(float(G.index(g, 0.9)), 4), fmt(float(G.index(g, 1.3)), 4), fmt(float(G.index(g, 1.7)), 4),
                    fmt(G.swir_abbe(g), 1), fmt(G.swir_partial(g), 3), role[g]] for g in glasses]
     glass_tbl = table(["Cam", "n(0,9 µm)", "n(1,3 µm)", "n(1,7 µm)", "V<sub>SWIR</sub>", "P<sub>SWIR</sub>", "Rol"],
@@ -187,6 +203,12 @@ def build(rd="results", out="docs/tasarim_raporu.html"):
                            fmt(v["alpha"] * 1e6, 2), fmt(v["rho"], 3)] for g, v in TH["glass_thermal"].items()],
                          "num", ["", "r", "r", "r"])
     mass_g = TH["glass_mass_g"] if TH else 160.0
+    GH = json.load(open(f"{rd}/ghosts.json")) if os.path.exists(f"{rd}/ghosts.json") else None
+    gh_tbl = ""
+    if GH:
+        gh_tbl = table(["1. yansıma (yüzey)", "2. yansıma (yüzey)", "Hayalet odağı – sensör (mm)", "Sensörde ayak izi (mm)", "E<sub>hayalet</sub>/E<sub>yıldız,tepe piksel</sub>"],
+                       [[str(d["j"]), str(d["i"]), fmt(d["focus_mm"], 1), fmt(d["footprint_mm"], 2), f"{d['ratio']:.1e}".replace(".", ",")]
+                        for d in GH["ghosts"][:12]], "num", ["c", "c", "r", "r", "r"])
     m = S
     # ---------------------------------------------------------------- html
     css = """
@@ -285,7 +307,7 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <p>Form, Petzval türevi 7 eleman / 5 gruptur: (+) menisk tekil, (+/−) yapıştırılmış dublet, <b>stop</b>, (−/+) yapıştırılmış dublet, (+) tekil ve görüntü yakınında (−) alan düzleştirici. Tüm yüzeyler küreseldir. Negatif düzleştirici hem Petzval eğriliğini giderir hem de çıkış gözbebeğini öne çekerek arka elemanın C-mount içinden geçmesini sağlar.</p>
 {fig("layout.png","Optik yerleşim, λ = 1,3 µm; 0°, 4,4° ve 6,24° alanlar. Kırmızı kesikli çizgi C-mount flanş düzlemi ve 1″ diş açıklığıdır; alan düzleştirici flanşın hemen önünde, diş içinde durur.")}
 <h3>SWIR'de cam dispersiyonu</h3>
-<p>Görünür bölge Abbe sayıları SWIR'de anlamını yitirir. 0,9 / 1,3 / 1,7 µm için <i>V</i><sub>SWIR</sub> = (n<sub>1,3</sub> − 1)/(n<sub>0,9</sub> − n<sub>1,7</sub>) ve kısmi dispersiyon <i>P</i><sub>SWIR</sub> = (n<sub>0,9</sub> − n<sub>1,3</sub>)/(n<sub>0,9</sub> − n<sub>1,7</sub>) hesaplandı. Klasik N-LAK9/N-SF6 çifti SWIR'de yalnızca ΔV ≈ 8 ve büyük ΔP verir; ikincil spektrum tüm alanlarda ~30 µm RMS bırakır. Seçilen N-PSK53A / N-KZFS4 çiftinin kısmi dispersiyonları eşittir (ΔP ≈ 0), ΔV ≈ 16'dır.</p>
+<p>Görünür bölge Abbe sayıları SWIR'de anlamını yitirir. 0,9 / 1,3 / 1,7 µm için <i>V</i><sub>SWIR</sub> = (n<sub>1,3</sub> − 1)/(n<sub>0,9</sub> − n<sub>1,7</sub>) ve kısmi dispersiyon <i>P</i><sub>SWIR</sub> = (n<sub>0,9</sub> − n<sub>1,3</sub>)/(n<sub>0,9</sub> − n<sub>1,7</sub>) hesaplandı. Klasik N-LAK9/N-SF6 çifti SWIR'de yalnızca ΔV ≈ 8 ve büyük ΔP verir; ikincil spektrum tüm alanlarda ~30 µm RMS bırakır. Seçilen {G_CROWN} / {G_FLINT} çiftinin SWIR kısmi dispersiyon farkı ΔP = {fmt(abs(G.swir_partial(G_CROWN)-G.swir_partial(G_FLINT)),3)}, Abbe farkı ΔV = {fmt(G.swir_abbe(G_CROWN)-G.swir_abbe(G_FLINT))}'dir; ikinci tur taramada termal davranış da seçim ölçütüne eklenmiştir (Bölüm 15).</p>
 {glass_tbl}
 <h3>Cam çifti taraması</h3>
 <p>16 kron/flint çifti aynı başlangıç formundan kademeli (f/2,8 → f/2,2 → f/1,8) optimize edildi; tablo keskin (blur'suz) merit ile elde edilen polikromatik RMS nokta yarıçaplarını verir.</p>
@@ -355,12 +377,17 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 {fig("illumination_chief.png","Bağıl aydınlatma (yön kosinüsü uzayında çıkış konisi alanı, eksene göre) ve görüntü düzleminde ana ışın açısı.")}
 {ri_tbl}
 
-<h2><span>13</span>Tolerans duyarlılığı</h2>
+<h2><span>13</span>Hayalet (ghost) analizi</h2>
+<p>Paraksiyel iki-yansımalı hayalet üreteci: eksen demeti bir yüzeyden geriye, öndeki bir yüzeyden tekrar ileriye yansıyıp sensöre ulaşır; sensörün kendi yansıması (R ≈ 0,25) ile bir mercek yüzeyi arasındaki hayaletler de dâhildir. Yüzey yansıtıcılığı geniş bant AR için R = 0,5 % alınmıştır. Oran, hayaletin bir piksele düşürdüğü enerjinin aynı akıdaki bir yıldızın tepe pikselindeki enerjiye bölümüdür (en dar ayak izinden başlayarak ilk 12 hayalet).</p>
+{gh_tbl}
+<p>Sensör yakınında odaklanan hayalet yoktur; en dar ayak izi bile yüzlerce piksel çapındadır ve piksel başına oran 10⁻⁸ mertebesinde kalır. Gündüz kullanımında sorun, alan içindeki yıldızların hayaletleri değil, alan dışındaki güneşin ön elemandan saçılması ve gövde iç yüzeyleridir; bunun için güneş siperliği ve yivli, siyah iç yüzeyler (Bölüm 16) esastır.</p>
+
+<h2><span>14</span>Tolerans duyarlılığı</h2>
 <p>Yarıçap (+%0,1), kalınlık/hava aralığı (+50 µm) ve eleman kaçıklığı (20 µm) tekil sapmaları. Odak telafi elemanıdır: her sapma sonrası odak, alan-ortalamalı RMS'yi nominal {fmt(S['sensitivity_base_rms_um'])} µm'ye geri getirecek şekilde ayarlanmıştır. Kaçıklık satırlarında ΔRMS blur'un alan boyunca tepe-tepe değişimidir; boresight sütunu eksen yıldızının merkez kaymasıdır.</p>
 {sens_tbl}
 <p>Yarıçap ve kalınlık hataları yalnızca odak düzeltmesi gerektirir (en hassası E6–düzleştirici aralığı: +50 µm → ≈ −135 µm odak). Kaçıklıklar PSF tekdüzeliğini ≤ 0,5 µm bozar; boresight kaymaları (≤ 17 µm / 20 µm kaçıklık) uçuşta yıldızlarla kalibre edilir, kritik olan ısıl/mekanik kararlılıktır.</p>
 
-<h2><span>14</span>Termal analiz — dört gövde malzemesi</h2>
+<h2><span>15</span>Termal analiz — dört gövde malzemesi</h2>
 <p>Homojen sıcaklık değişimi (−40…+70 °C, referans 20 °C) modeli: cam yarıçapları ve kalınlıkları camın kendi genleşme katsayısıyla, hava aralıkları gövde malzemesinin katsayısıyla, flanş–sensör mesafesi (17,526 mm) alüminyum kamera gövdesiyle (23,6·10⁻⁶/K) ölçeklenir; cam indisleri SCHOTT dn/dT dispersiyon formülüyle (D₀…E₁, λ<sub>TK</sub>) ve o sıcaklıktaki hava indisine göre hesaplanır. Odak mekanizması yoktur (sabit odak); tablolar 20 °C'de ayarlanmış objektifin sıcaklıkla davranışını verir.</p>
 {th_glass}
 {fig("thermal.png","Soldan sağa: sensördeki odak kayması (20 °C'ye göre; gri bant ±50 µm tasarım toleransı), eksen ve kenar alanda polikromatik RMS nokta yarıçapı (gri bant nominal 16–23 µm), eksen/kenar minimum 3×3 piksel kare-içi enerji.")}
@@ -368,7 +395,7 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <h3>Bileşen bütçesi</h3>
 <p>Odak kaymasının ve odak uzaklığı değişiminin kaynakları (+50 K için, doğrusal):</p>
 {th_budget}
-<div class="key"><p><b>Sonuç.</b> Baskın etki camdır: N-PSK53A'nın negatif ve N-KZFS4'ün pozitif dn/dT'si aynı yöne çalışır ve tasarımın yüksek tekil eleman güçleri (E2 f ≈ +32 mm, E3 f ≈ −42 mm) indis değişimini EFL'ye ~4–5 kat büyütür. Gövde genleşmesi ise ters yönde ve zayıf bir kaldıraçtır (10⁻⁶/K başına −1,7 µm). Bu yüzden <b>dört malzemenin hiçbiri tek başına atermal değildir</b> ve sıralama beklentinin tersidir: yüksek genleşmeli alüminyum camın etkisini en çok telafi eder (−60/+55 µm), düşük genleşmeli Invar en kötüsüdür (−106/+93 µm). Atermal davranış için gerekli gövde katsayısı ≈ {fmt(TH['alpha_athermal_1e6'],0) if TH else '—'}·10⁻⁶/K'dir; bu değer metallerin dışında, polimer/kompozit bölgesindedir.</p></div>
+<div class="key"><p><b>Sonuç.</b> Baskın etki camdır: elemanların dn/dT'si ve genleşmesi, tasarımın tekil eleman güçleriyle büyütülerek odak uzaklığına yansır. Gövde genleşmesi ise ters yönde ve zayıf bir kaldıraçtır (10⁻⁶/K başına −1,7 µm). Bu yüzden <b>dört malzemenin hiçbiri tek başına atermal değildir</b> ve sıralama beklentinin tersidir: yüksek genleşmeli alüminyum camın etkisini en çok telafi eder (−60/+55 µm), düşük genleşmeli Invar en kötüsüdür (−106/+93 µm). Atermal davranış için gerekli gövde katsayısı ≈ {fmt(TH['alpha_athermal_1e6'],0) if TH else '—'}·10⁻⁶/K'dir; bu değer metallerin dışında, polimer/kompozit bölgesindedir.</p></div>
 <h3>Odak uzaklığı (plaka ölçeği) sürüklenmesi</h3>
 <p>EFL sıcaklıkla {fmt(min(d['efl_ppm_per_K'] for d in TH['materials'].values()),0) if TH else '—'}–{fmt(max(d['efl_ppm_per_K'] for d in TH['materials'].values()),0) if TH else '—'} ppm/K değişir (−40 °C'de {fmt(TH['efl_rows'][0]['efl'],3) if TH else '—'} mm, +70 °C'de {fmt(TH['efl_rows'][2]['efl'],3) if TH else '—'} mm). Bu, alan kenarındaki yıldızı ±55 K'da yaklaşık ±0,9 piksel kaydırır; gövde malzemesinden neredeyse bağımsızdır (%95'i camdan gelir). Yıldız izleyicide bu etki sıcaklık ölçümüyle indekslenmiş bir plaka-ölçeği kalibrasyon tablosuyla giderilir; tek sıcaklıkta kalibrasyon yeterli değildir.</p>
 <h3>Çözüm seçenekleri</h3>
@@ -380,21 +407,21 @@ code,kbd{font-family:var(--mono);font-size:.92em;background:var(--tint);padding:
 <p><b>3. Aktif odak.</b> Motorlu ya da ısıya duyarlı (bimetal) odak ayarı; ±0,1 mm strok yeterlidir. Bu seçenek plaka ölçeği sürüklenmesini gidermez; kalibrasyon tablosu her durumda gerekir.</p>
 <p><b>Sınırlamalar:</b> radyal ve eksenel sıcaklık gradyanları, camların ısıl iletim gecikmesi ve kamera gövdesinin gerçek malzemesi/ölçüsü modelde yoktur; kamera flanş–sensör mesafesinin sıcaklıkla değişimi (17,526 mm alüminyum varsayımıyla ±23 µm) üreticiden doğrulanmalıdır.</p>
 
-<h2><span>15</span>Mekanik ve entegrasyon</h2>
+<h2><span>16</span>Mekanik ve entegrasyon</h2>
 <ul>
 <li>Toplam uzunluk S1 → görüntü {fmt(misc['track'],1)} mm; flanştan öne ≈ {fmt(misc['track']-17.526,1)} mm; ön eleman çapı ≈ 48 mm (kamera gövdesi 55 × 55 mm ile uyumlu). Arka eleman serbest açıklığı 20,5 mm, arka tepe flanşın {fmt(misc['rear_vertex_to_flange'],2)} mm önünde.</li>
-<li>Odaklama: ±0,3 mm ayar (helikoid veya shim); gövde malzemesi ve termal ön-ofset için Bölüm 14. Montaj kriteri: kolimatör/yıldız görüntüsünde 3×3 kare-içi enerji ≥ %95 ve 1×1 ≤ %40 (RMS ≈ 17–18 µm). PSF ±50 µm odak hatasına toleranslıdır.</li>
+<li>Odaklama: ±0,3 mm ayar (helikoid veya shim); gövde malzemesi ve termal ön-ofset için Bölüm 15. Montaj kriteri: kolimatör/yıldız görüntüsünde 3×3 kare-içi enerji ≥ %95 ve 1×1 ≤ %40 (RMS ≈ 17–18 µm). PSF ±50 µm odak hatasına toleranslıdır.</li>
 <li>Gündüz kullanım: derin, siyah anodize güneş siperliği (yarım görüş alanı 6,3°), yivli iç yüzeyler, 0,9–1,7 µm geniş bant AR kaplama (&lt; %0,5); gök fonu için 1,2–1,7 µm (veya 1,4–1,7 µm) bant geçiren filtre. Filtre C-mount içine konursa BFL kalınlığın ≈ ⅓'ü kadar uzar; mevcut {fmt(misc['rear_vertex_to_flange'],2)} mm boşluk ≈ 3 mm filtre için yeterlidir.</li>
-<li>Camlar: SCHOTT N-PSK53A, N-KZFS4, N-SF6; 1,7 µm'ye kadar iç geçirgenlik yüksek. Cam kütlesi ≈ {mass_g:.0f} g, alüminyum hücreyle ≈ 450 g (titanyum/çelik/Invar hücre ile 550–650 g).</li>
+<li>Camlar: SCHOTT {', '.join(used)}; 1,7 µm'ye kadar iç geçirgenlik yüksek. Cam kütlesi ≈ {mass_g:.0f} g, alüminyum hücreyle ≈ 450 g (titanyum/çelik/Invar hücre ile 550–650 g).</li>
 </ul>
 
-<h2><span>16</span>Sınırlamalar ve sonraki adımlar</h2>
+<h2><span>17</span>Sınırlamalar ve sonraki adımlar</h2>
 <ul>
 <li>Kamera penceresi/soğuk filtre kalınlığı veri sayfasında verilmediği için görüntü uzayı hava kabul edildi; pencere odak ayarıyla telafi edilir.</li>
 <li>Sellmeier katsayıları SCHOTT kataloğundandır ve n<sub>d</sub> ile doğrulanmıştır; üretim öncesi eriyik verileriyle yeniden optimizasyon önerilir.</li>
-<li>Isıl analiz homojen sıcaklık için yapılmıştır (Bölüm 14); gradyanlar ve geçici rejim ayrı çalışılmalıdır.</li>
+<li>Isıl analiz homojen sıcaklık için yapılmıştır (Bölüm 15); gradyanlar ve geçici rejim ayrı çalışılmalıdır.</li>
 <li>Merkezleme simülasyonu gürültüsüz ve basit ağırlık merkeziyle yapılmıştır (geometrik ve Huygens PSF ile); gerçek algoritma ve gök fonu gürültüsü ile uçtan uca SNR/merkezleme bütçesi bir sonraki adımdır.</li>
-<li>Hayalet (ghost) ve saçılma analizi yapılmamıştır; gündüz kullanımında güneş açısı bütçesiyle birlikte değerlendirilmelidir.</li>
+<li>Hayalet analizi paraksiyel ve iki yansımayla sınırlıdır (Bölüm 13); saçılma ve güneş dışlama açısı bütçesi ayrı çalışılmalıdır.</li>
 </ul>
 <div class="foot">Tüm analizler depodaki <code>swirlens</code> ışın izleyicisiyle üretilmiştir; sayısal kaynak <code>results/summary.json</code>, <code>results/extra_metrics.json</code>, <code>results/sensitivity.txt</code>. Zemax dosyası <code>results/swir_75mm_f18_cmount.zmx</code>.</div>
 </div>
